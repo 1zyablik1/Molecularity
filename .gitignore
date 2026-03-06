@@ -47,6 +47,10 @@ ExportedObj/
 *.csproj
 *.unityproj
 *.sln
+
+# Exception: .NET solution in dotnet/ folder
+!dotnet/**/*.csproj
+!dotnet/**/*.sln
 *.suo
 *.tmp
 *.user
