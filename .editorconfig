@@ -1,0 +1,96 @@
+# see http://editorconfig.org/ for docs on this file
+# see https://www.jetbrains.com/help/rider/EditorConfig_Index.html for Rider specific docs
+
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+[*.json]
+indent_size = 2
+
+[*.md]
+
+[*.csproj]
+dotnet_diagnostic.MSB3277.severity = none
+
+[*.cs]
+max_line_length = 140
+
+# K&R style instead of Allman
+csharp_new_line_before_open_brace = none
+
+csharp_prefer_braces = true:warning
+dotnet_diagnostic.IDE0011.severity = warning
+
+# all formatting options
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/csharp-formatting-options
+
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+csharp_blank_lines_around_region = 1
+blank_lines_around_region = 1
+
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_case_contents_when_block = false
+
+csharp_indent_block_contents = true
+
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/dotnet-formatting-options
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+dotnet_naming_symbols.public_symbols.applicable_kinds = property, method, field, event, delegate
+dotnet_naming_symbols.public_symbols.applicable_accessibilities = public
+
+# Defining the 'first_word_upper_case_style' naming style
+dotnet_naming_style.first_word_upper_case_style.capitalization = first_word_upper
+
+# Defining the 'public_members_must_be_capitalized' naming rule, by setting the
+# symbol group to the 'public symbols' symbol group,
+dotnet_naming_rule.public_members_must_be_capitalized.symbols = public_symbols
+# setting the naming style to the 'first_word_upper_case_style' naming style,
+dotnet_naming_rule.public_members_must_be_capitalized.style = first_word_upper_case_style
+# and setting the severity.
+dotnet_naming_rule.public_members_must_be_capitalized.severity = warning
+
+# var vs explicit type
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0007-ide0008
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_elsewhere = false:warning
+dotnet_diagnostic.IDE0008.severity = warning
+dotnet_diagnostic.IDE0007.severity = none
+
+
+dotnet_diagnostic.IDE0011.severity = error
+
+dotnet_diagnostic.UNT0001.severity = error
+dotnet_diagnostic.UNT0002.severity = warning
+dotnet_diagnostic.UNT0022.severity = error
+
+dotnet_diagnostic.IDE0040.severity = warning
+dotnet_diagnostic.IDE0005.severity = error
+dotnet_diagnostic.IDE0051.severity = warning
+
+
+# Two or more consecutive blank lines: Remove down to one blank line. SA1507
+dotnet_diagnostic.SA1507.severity = error
+
+# Blank line immediately before or after a { line: remove it. SA1505, SA1509
+dotnet_diagnostic.SA1505.severity = error
+dotnet_diagnostic.SA1509.severity = error
+
+# Blank line immediately before a } line: remove it. SA1508
+dotnet_diagnostic.SA1508.severity = error
