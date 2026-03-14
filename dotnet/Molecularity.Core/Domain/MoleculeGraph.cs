@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Molecularity.Core.Data;
 
 namespace Molecularity.Core.Domain {
     public class MoleculeGraph {
@@ -43,6 +42,10 @@ namespace Molecularity.Core.Domain {
                 : throw new Exception($"Molecule with id {moleculeId} not found.");
         }
 
+        public bool TryGetMolecule(int moleculeId, out Molecule? molecule) {
+            return _molecules.TryGetValue(moleculeId, out molecule);
+        }
+
         [return: NotNull]
         public IEnumerable<Molecule> GetAliveNeighbors(int moleculeId) {
             if (!_connections.TryGetValue(moleculeId, out HashSet<int>? neighbors)) {
@@ -61,8 +64,7 @@ namespace Molecularity.Core.Domain {
         }
 
         public void RemoveMolecule(int moleculeId) {
-            Molecule molecule = _molecules[moleculeId];
-            if (molecule is null) {
+            if (!_molecules.TryGetValue(moleculeId, out Molecule? molecule)) {
                 throw new Exception($"Molecule with id {moleculeId} not found.");
             }
 
@@ -71,6 +73,17 @@ namespace Molecularity.Core.Domain {
             }
 
             molecule.Remove();
+
+            if (!_connections.TryGetValue(moleculeId, out HashSet<int>? neighbors)) {
+                return;
+            }
+
+            foreach (int neighborId in neighbors) {
+                _molecules[neighborId].Reveal();
+                _connections[neighborId].Remove(moleculeId);
+            }
+
+            _connections.Remove(moleculeId);
         }
 
         public bool IsEmpty() {

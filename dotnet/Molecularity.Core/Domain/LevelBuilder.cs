@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using Molecularity.Core.Data;
 
 namespace Molecularity.Core.Domain {
-    public class LevelBuilder {
-        public MoleculeGraph Build(LevelConfig levelConfig) {
+    public static class LevelBuilder {
+        public static MoleculeGraph Build(LevelConfig levelConfig) {
             var graph = new MoleculeGraph();
 
             foreach (MoleculeConfig moleculeConfig in levelConfig.Molecules) {

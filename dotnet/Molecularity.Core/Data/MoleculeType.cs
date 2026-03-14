@@ -3,6 +3,9 @@ namespace Molecularity.Core.Data {
     /// Defines the type of molecule. This can be used to determine how the molecule processes data and interacts with other molecules.
     /// </summary>
     public enum MoleculeType {
-        Simple
+        Simple,
+        Shield,
+        Anchor,
+        Parasite
     }
 }

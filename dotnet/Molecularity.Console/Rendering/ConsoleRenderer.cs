@@ -9,8 +9,9 @@ public class ConsoleRenderer : IGameRenderer {
         foreach (Molecule molecule in graph.GetAliveAll()) {
             IEnumerable<Molecule> neighbors = graph.GetAliveNeighbors(molecule.Id);
             string neighborIds = string.Join(", ", neighbors.Select(n => n.Id));
+            string value = molecule.IsRevealed ? molecule.Value.ToString() : "??";
 
-            System.Console.WriteLine($"[{molecule.Id}] | {molecule.Type} | {molecule.Value} | {neighborIds}");
+            System.Console.WriteLine($"[{molecule.Id}] | {molecule.Type} | {value} | {neighborIds}");
         }
     }
 
@@ -26,7 +27,7 @@ public class ConsoleRenderer : IGameRenderer {
         System.Console.WriteLine("Congratulations! You've won the game!");
     }
 
-    public void RenderDefeat(int culpritId) {
+    public void RenderDefeat(int? culpritId) {
         System.Console.WriteLine($"Game Over! Molecule ID {culpritId} caused your defeat.");
     }
 

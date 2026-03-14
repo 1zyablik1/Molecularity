@@ -9,7 +9,7 @@ namespace Molecularity.Core.Domain {
         public MoleculeGraph Graph { get; private set; }
 
         public GameSession(LevelConfig levelConfig) {
-            Graph = new LevelBuilder().Build(levelConfig);
+            Graph = LevelBuilder.Build(levelConfig);
             Status = GameStatus.InProgress;
 
             _turnExecutor = new TurnExecutor(Graph);
@@ -24,7 +24,7 @@ namespace Molecularity.Core.Domain {
 
             (bool IsLoss, int? CulpritId) lose = GameRules.IsLose(Graph);
             if (lose.IsLoss) {
-                Status = GameStatus.Lost;
+                Status = GameStatus.Lose;
                 return result with { CulpritId = lose.CulpritId };
             }
 

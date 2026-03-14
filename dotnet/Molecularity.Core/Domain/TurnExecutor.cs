@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace Molecularity.Core.Domain {
     public class TurnExecutor {
+        private const int DeltaPerTurn = -1;
+
         private readonly MoleculeGraph _graph;
 
         public TurnExecutor(MoleculeGraph graph) {
@@ -20,9 +22,10 @@ namespace Molecularity.Core.Domain {
 
             List<MoleculeValueChange> changes = new();
             foreach (Molecule alive in _graph.GetAliveAll()) {
-                //TODO : update delta calculation
-                int delta = -1;
+                int delta = alive.PassiveProperty.ModifyDelta(DeltaPerTurn, alive, _graph);
                 alive.ApplyDelta(delta);
+                alive.PassiveProperty.OnPassiveApply(alive, _graph);
+
                 changes.Add(new MoleculeValueChange(alive.Id, delta, alive.Value));
             }
 

@@ -10,15 +10,14 @@ public class ConsoleInputProvider : IInputProvider {
             string? input = System.Console.ReadLine();
 
             if (int.TryParse(input, out int moleculeId)) {
-                try {
-                    Molecule molecule = graph.GetMolecule(moleculeId);
-                    if (molecule.IsAlive) {
+                if (graph.TryGetMolecule(moleculeId, out Molecule? molecule)) {
+                    if (molecule!.IsAlive) {
                         return moleculeId;
                     }
 
                     System.Console.WriteLine("Molecule is already removed. Try again.");
                 }
-                catch (Exception) {
+                else {
                     System.Console.WriteLine("Invalid molecule ID. Please try again.");
                 }
             }

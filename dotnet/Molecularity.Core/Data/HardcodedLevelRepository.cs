@@ -4,12 +4,12 @@ using System.Linq;
 namespace Molecularity.Core.Data {
     public class HardcodedLevelRepository : ILevelRepository {
         private readonly LevelConfig[] _levels = new LevelConfig[1] {
-            new LevelConfig(
+            new(
                 LevelId: 1,
                 Molecules: new List<MoleculeConfig> {
-                    new(1, MoleculeType.Simple, InitialValue: 3),
-                    new(2, MoleculeType.Simple, InitialValue: 2),
-                    new(3, MoleculeType.Simple, InitialValue: 1),
+                    new(1, MoleculeType.Simple, InitialValue: 3, true),
+                    new(2, MoleculeType.Simple, InitialValue: 2, false),
+                    new(3, MoleculeType.Simple, InitialValue: 1, false),
                 },
                 Connections: new List<ConnectionConfig> {
                     new(1, 2),

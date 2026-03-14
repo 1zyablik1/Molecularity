@@ -16,6 +16,7 @@ public class ConsoleGameLoop {
     }
 
     public void Run() {
+        //TODO: allow user to select level
         LevelConfig level = _repository.Get(1);
         var session = new GameSession(level);
 
@@ -29,8 +30,8 @@ public class ConsoleGameLoop {
                 case GameStatus.Win:
                     _renderer.RenderVictory();
                     break;
-                case GameStatus.Lost:
-                    _renderer.RenderDefeat(result.CulpritId ?? -1);
+                case GameStatus.Lose:
+                    _renderer.RenderDefeat(result.CulpritId);
                     break;
             }
         }
