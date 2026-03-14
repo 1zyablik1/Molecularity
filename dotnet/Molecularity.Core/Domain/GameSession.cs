@@ -25,6 +25,7 @@ namespace Molecularity.Core.Domain {
             (bool IsLoss, int? CulpritId) lose = GameRules.IsLose(Graph);
             if (lose.IsLoss) {
                 Status = GameStatus.Lost;
+                return result with { CulpritId = lose.CulpritId };
             }
 
             if (GameRules.IsWin(Graph)) {
