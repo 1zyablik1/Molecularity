@@ -19,7 +19,8 @@ public class ConsoleRenderer : IGameRenderer {
         System.Console.WriteLine($"\nTurn executed on molecule ID: {result.RemovedMoleculeId}");
 
         foreach (MoleculeValueChange change in result.Changes) {
-            System.Console.WriteLine($"Molecule ID: {change.MoleculeId} | Value Change: {change.Delta} | New Value: {change.NewValue}");
+            string newValue = change.IsRevealed ? change.NewValue.ToString() : "??";
+            System.Console.WriteLine($"Molecule ID: {change.MoleculeId} | Value Change: {change.Delta} | New Value: {newValue}");
         }
     }
 

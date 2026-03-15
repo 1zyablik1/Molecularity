@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain.Abilities;
 using Molecularity.Core.Domain.Passives;
@@ -6,18 +7,27 @@ using Molecularity.Core.Domain.Passives;
 namespace Molecularity.Core.Domain {
     public static class MoleculeFactory {
         public static Molecule Create(MoleculeConfig config) {
-            Molecule molecule = config.Type switch {
-                MoleculeType.Simple  => new Molecule(config, new NoAbility()),
-                MoleculeType.Shield  => new Molecule(config, new NoAbility()),
-                // MoleculeType.Anchor  => new Molecule(config, new HealNeighborsAbility(), new NoPassive()),
-                // MoleculeType.Parasite=> new Molecule(config, new NoAbility(), new ParasitePassive()),
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-            //TODO: This is a temporary solution.
-            molecule.AddPassive(new NoPassive());
+            var molecule = new Molecule(config, CreateAbility(config.Type));
+            foreach (IPassiveProperty? passive in CreatePassives(config.Type)) {
+                molecule.AddPassive(passive);
+            }
 
             return molecule;
         }
+
+        private static IAbility CreateAbility(MoleculeType type) => type switch {
+            MoleculeType.Simple => new NoAbility(),
+            MoleculeType.Shield => new NoAbility(),
+            MoleculeType.Parasite => new NoAbility(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        private static IEnumerable<IPassiveProperty> CreatePassives(MoleculeType type) => type switch {
+            MoleculeType.Simple => Array.Empty<IPassiveProperty>(),
+            //TODO: configure
+            MoleculeType.Shield => new[] { new ShieldPassive(2) },
+            MoleculeType.Parasite => Array.Empty<IPassiveProperty>(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
 }

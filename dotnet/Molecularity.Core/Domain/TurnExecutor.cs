@@ -26,7 +26,7 @@ namespace Molecularity.Core.Domain {
                 alive.ApplyDelta(delta);
                 alive.TickPassives(_graph);
 
-                changes.Add(new MoleculeValueChange(alive.Id, delta, alive.Value));
+                changes.Add(new MoleculeValueChange(alive.Id, delta, alive.Value, alive.IsRevealed));
             }
 
             return new TurnResult(moleculeId, changes);

@@ -1,6 +1,8 @@
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
 using Molecularity.Core.Interfaces;
+using Molecularity.Core.Items.Implementations;
+using Molecularity.Core.Player;
 
 namespace Molecularity.Console;
 
@@ -18,7 +20,16 @@ public class ConsoleGameLoop {
     public void Run() {
         //TODO: allow user to select level
         LevelConfig level = _repository.Get(1);
-        var session = new GameSession(level);
+
+        //TODO: update inventory
+        var inventory = new PlayerInventory();
+        inventory.Add(new RevealAllItem());
+        inventory.Add(new PlusOneAllItem());
+        inventory.Add(new FreezeItem());
+        inventory.Add(new ChainBreakItem());
+        inventory.Add(new UndoItem());
+
+        var session = new GameSession(level, inventory);
 
         while (session.Status == GameStatus.InProgress) {
             _renderer.RenderGraph(session.Graph);

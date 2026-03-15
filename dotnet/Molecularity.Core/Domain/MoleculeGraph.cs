@@ -35,6 +35,16 @@ namespace Molecularity.Core.Domain {
             _connections[toMoleculeId].Add(fromMoleculeId);
         }
 
+        public void RemoveConnection(int fromMoleculeId, int toMoleculeId) {
+            if (_connections.TryGetValue(fromMoleculeId, out HashSet<int>? fromNeighbors)) {
+                fromNeighbors.Remove(toMoleculeId);
+            }
+
+            if (_connections.TryGetValue(toMoleculeId, out HashSet<int>? toNeighbors)) {
+                toNeighbors.Remove(fromMoleculeId);
+            }
+        }
+
         [return: NotNull]
         public Molecule GetMolecule(int moleculeId) {
             return _molecules.TryGetValue(moleculeId, out Molecule? molecule)
@@ -88,6 +98,41 @@ namespace Molecularity.Core.Domain {
 
         public bool IsEmpty() {
             return _molecules.Values.All(m => !m.IsAlive);
+        }
+
+        public GraphSnapshot TakeSnapshot() {
+            var moleculeSnapshot = new List<MoleculeSnapshot>();
+            foreach (Molecule molecule in _molecules.Values) {
+                moleculeSnapshot.Add(new MoleculeSnapshot(molecule.Id, molecule.Value, molecule.IsAlive, molecule.IsRevealed, molecule.ClonePassives()));
+            }
+
+            List<MoleculeConnectionSnapshot> connectionSnapshot = new();
+            foreach (KeyValuePair<int, HashSet<int>> kvp in _connections) {
+                int fromId = kvp.Key;
+                foreach (int toId in kvp.Value) {
+                    if (fromId < toId) {
+                        connectionSnapshot.Add(new MoleculeConnectionSnapshot(fromId, toId));
+                    }
+                }
+            }
+
+            return new GraphSnapshot(moleculeSnapshot, connectionSnapshot);
+        }
+
+        public void RestoreSnapshot(GraphSnapshot snapshot) {
+            foreach (MoleculeSnapshot moleculeSnapshot in snapshot.Molecules) {
+                if (_molecules.TryGetValue(moleculeSnapshot.Id, out Molecule? molecule)) {
+                    molecule.SetFromSnapshot(moleculeSnapshot);
+                }
+                else {
+                    throw new Exception($"Molecule with id {moleculeSnapshot.Id} not found.");
+                }
+            }
+
+            _connections.Clear();
+            foreach (MoleculeConnectionSnapshot connectionSnapshot in snapshot.Connections) {
+                AddConnection(connectionSnapshot.FromId, connectionSnapshot.ToId);
+            }
         }
     }
 }

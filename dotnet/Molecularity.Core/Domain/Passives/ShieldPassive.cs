@@ -19,5 +19,9 @@ namespace Molecularity.Core.Domain.Passives {
 
             IsExpired = true;
         }
+
+        public IPassiveProperty Clone() {
+            return new ShieldPassive(ShieldLeft);
+        }
     }
 }

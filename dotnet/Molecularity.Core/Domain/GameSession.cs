@@ -1,5 +1,7 @@
 using System;
 using Molecularity.Core.Data;
+using Molecularity.Core.Items;
+using Molecularity.Core.Player;
 
 namespace Molecularity.Core.Domain {
     public class GameSession {
@@ -8,7 +10,20 @@ namespace Molecularity.Core.Domain {
 
         public MoleculeGraph Graph { get; private set; }
 
-        public GameSession(LevelConfig levelConfig) {
+        private readonly PlayerInventory _inventory;
+
+        private GraphSnapshot? _previousSnapshot;
+        private bool _lastActionWasUndo;
+
+        private bool _isUndoUnlocked;
+
+        public bool CanUndo => _isUndoUnlocked
+                               && _previousSnapshot != null
+                               && !_lastActionWasUndo
+                               && Status == GameStatus.InProgress;
+
+        public GameSession(LevelConfig levelConfig, PlayerInventory inventory) {
+            _inventory = inventory;
             Graph = LevelBuilder.Build(levelConfig);
             Status = GameStatus.InProgress;
 
@@ -20,6 +35,8 @@ namespace Molecularity.Core.Domain {
                 throw new InvalidOperationException("Game is already over.");
             }
 
+            _previousSnapshot = Graph.TakeSnapshot();
+            _lastActionWasUndo = false;
             TurnResult result = _turnExecutor.Execute(moleculeId);
 
             (bool IsLoss, int? CulpritId) lose = GameRules.IsLose(Graph);
@@ -33,6 +50,65 @@ namespace Molecularity.Core.Domain {
             }
 
             return result;
+        }
+
+        public void Undo() {
+            if (!CanUndo) {
+                throw new InvalidOperationException("Undo not available.");
+            }
+
+            Graph.RestoreSnapshot(_previousSnapshot!);
+            _previousSnapshot = null;
+            _lastActionWasUndo = true;
+        }
+
+        public void UseInstantItem(LevelItemType type) {
+            ILevelItem? iLevelItem = _inventory.GetItem(type);
+            if (iLevelItem == null) {
+                throw new InvalidOperationException($"No instant item of type {type} available.");
+            }
+
+            if (iLevelItem is not IInstantItem item) {
+                throw new InvalidOperationException($"Item of type {type} is not an instant item.");
+            }
+
+            // Corner case for undo item
+            if (type == LevelItemType.Undo) {
+                _inventory.Remove(item);
+                _isUndoUnlocked = true;
+                return;
+            }
+
+            _inventory.Remove(item);
+            item.Use(Graph);
+        }
+
+        public void UseSingleTargetItem(LevelItemType type, int targetId) {
+            ILevelItem? iLevelItem = _inventory.GetItem(type);
+            if (iLevelItem == null) {
+                throw new InvalidOperationException($"No single target item of type {type} available.");
+            }
+
+            if (iLevelItem is not ISingleTargetItem item) {
+                throw new InvalidOperationException($"Item of type {type} is not a single target item.");
+            }
+
+            _inventory.Remove(item);
+            item.Use(targetId, Graph);
+        }
+
+        public void UseDoubleTargetItem(LevelItemType type, int fromId, int toId) {
+            ILevelItem? iLevelItem = _inventory.GetItem(type);
+            if (iLevelItem == null) {
+                throw new InvalidOperationException($"No double target item of type {type} available.");
+            }
+
+            if (iLevelItem is not IDoubleTargetItem item) {
+                throw new InvalidOperationException($"Item of type {type} is not a double target item.");
+            }
+
+            _inventory.Remove(item);
+            item.Use(fromId, toId, Graph);
         }
     }
 }

@@ -1,7 +1,7 @@
 using Molecularity.Core.Domain;
 
 namespace Molecularity.Core.Items.Implementations {
-    public class PlusOneAllItem : IInstantItem{
+    public class PlusOneAllItem : IInstantItem {
         public LevelItemType Type => LevelItemType.PlusOneAll;
 
         public void Use(MoleculeGraph graph) {

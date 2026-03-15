@@ -1,7 +1,7 @@
 using Molecularity.Core.Domain;
 
 namespace Molecularity.Core.Items.Implementations {
-    public class RevealAllItem : IInstantItem{
+    public class RevealAllItem : IInstantItem {
         public LevelItemType Type => LevelItemType.RevealAll;
 
         public void Use(MoleculeGraph graph) {

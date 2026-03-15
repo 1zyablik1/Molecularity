@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain.Abilities;
 using Molecularity.Core.Domain.Passives;
@@ -61,6 +62,21 @@ namespace Molecularity.Core.Domain {
             }
 
             _passives.RemoveAll(p => p.IsExpired);
+        }
+
+        public void SetFromSnapshot(MoleculeSnapshot moleculeSnapshot) {
+            Id = moleculeSnapshot.Id;
+            Value = moleculeSnapshot.Value;
+            IsAlive = moleculeSnapshot.IsAlive;
+            IsRevealed = moleculeSnapshot.IsRevealed;
+
+            _passives.Clear();
+            _passives.AddRange(moleculeSnapshot.Passives.Select(p => p.Clone()));
+        }
+
+        //TODO: maybe move to some helper class?
+        public IEnumerable<IPassiveProperty> ClonePassives() {
+            return _passives.Select(passive => passive.Clone()).ToList();
         }
     }
 }

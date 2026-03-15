@@ -3,5 +3,6 @@ namespace Molecularity.Core.Domain.Passives {
         bool IsExpired { get; }
         int ModifyDelta(int delta, Molecule owner, MoleculeGraph graph);
         void OnPassiveApply(Molecule owner, MoleculeGraph graph);
+        IPassiveProperty Clone();
     }
 }
