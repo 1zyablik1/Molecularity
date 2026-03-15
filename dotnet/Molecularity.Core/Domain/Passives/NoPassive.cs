@@ -1,5 +1,7 @@
 namespace Molecularity.Core.Domain.Passives {
     public class NoPassive : IPassiveProperty {
+        public bool IsExpired { get; private set; }
+
         public int ModifyDelta(int delta, Molecule owner, MoleculeGraph graph) {
             return delta;
         }

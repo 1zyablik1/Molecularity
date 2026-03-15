@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain.Abilities;
@@ -12,22 +13,30 @@ namespace Molecularity.Core.Domain {
         public bool IsAlive { get; private set; } = true;
         public bool IsRevealed { get; private set; }
 
-        public IAbility Ability { get; private set; }
+        private IAbility Ability { get; set; }
 
-        public IPassiveProperty PassiveProperty { get; private set; }
+        private readonly List<IPassiveProperty> _passives = new();
 
-        public Molecule(MoleculeConfig config, [NotNull] IAbility ability, [NotNull] IPassiveProperty passiveProperty) {
+        public Molecule(MoleculeConfig config, [NotNull] IAbility ability) {
             Id = config.Id;
             Type = config.Type;
             Value = config.InitialValue;
             IsRevealed = config.IsInitiallyRevealed;
 
             Ability = ability;
-            PassiveProperty = passiveProperty;
         }
 
         public void ApplyDelta(int delta) {
             Value += delta;
+        }
+
+        public int GetModifiedDelta(int baseDelta, MoleculeGraph graph) {
+            int delta = baseDelta;
+            foreach (IPassiveProperty? passive in _passives) {
+                delta = passive.ModifyDelta(delta, this, graph);
+            }
+
+            return delta;
         }
 
         public void Remove() {
@@ -40,6 +49,18 @@ namespace Molecularity.Core.Domain {
 
         public void UseAbility(MoleculeGraph graph) {
             Ability.Execute(this, graph);
+        }
+
+        public void AddPassive(IPassiveProperty passive) {
+            _passives.Add(passive);
+        }
+
+        public void TickPassives(MoleculeGraph graph) {
+            foreach (IPassiveProperty? passive in _passives) {
+                passive.OnPassiveApply(this, graph);
+            }
+
+            _passives.RemoveAll(p => p.IsExpired);
         }
     }
 }

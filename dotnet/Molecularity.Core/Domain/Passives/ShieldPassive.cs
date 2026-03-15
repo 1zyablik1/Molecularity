@@ -1,6 +1,7 @@
 namespace Molecularity.Core.Domain.Passives {
     public class ShieldPassive : IPassiveProperty {
         private int ShieldLeft { get; set; }
+        public bool IsExpired { get; private set; }
 
         public ShieldPassive(int shieldLeft) {
             ShieldLeft = shieldLeft;
@@ -13,7 +14,10 @@ namespace Molecularity.Core.Domain.Passives {
         public void OnPassiveApply(Molecule owner, MoleculeGraph graph) {
             if (ShieldLeft > 0) {
                 ShieldLeft--;
+                return;
             }
+
+            IsExpired = true;
         }
     }
 }

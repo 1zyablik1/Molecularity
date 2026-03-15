@@ -22,9 +22,9 @@ namespace Molecularity.Core.Domain {
 
             List<MoleculeValueChange> changes = new();
             foreach (Molecule alive in _graph.GetAliveAll()) {
-                int delta = alive.PassiveProperty.ModifyDelta(DeltaPerTurn, alive, _graph);
+                int delta = alive.GetModifiedDelta(DeltaPerTurn, _graph);
                 alive.ApplyDelta(delta);
-                alive.PassiveProperty.OnPassiveApply(alive, _graph);
+                alive.TickPassives(_graph);
 
                 changes.Add(new MoleculeValueChange(alive.Id, delta, alive.Value));
             }
