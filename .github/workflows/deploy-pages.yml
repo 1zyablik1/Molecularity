@@ -23,12 +23,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish Blazor WASM
+        run: dotnet publish web/Molecularity.Web/Molecularity.Web.csproj -c Release -o publish
+
+      - name: Fix base href for GitHub Pages
+        run: |
+          sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|' publish/wwwroot/index.html
+
+      - name: Ensure .nojekyll
+        run: touch publish/wwwroot/.nojekyll
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload static site
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: tools/Molecularity.Solver/Molecularity.Web/wwwroot
+          path: publish/wwwroot
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

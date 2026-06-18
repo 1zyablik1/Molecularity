@@ -1,0 +1,28 @@
+@using Molecularity.Web.Services
+
+<section class="levels-view">
+    <div class="hero">
+        <p class="eyebrow">ИССЛЕДОВАТЕЛЬСКИЙ ЦИКЛ / 01</p>
+        <h1>Стабилизируй<br><em>молекулярную сеть</em></h1>
+        <p class="hero-copy">Удаляй узлы в правильном порядке. Не дай ни одной молекуле распасться до нуля.</p>
+    </div>
+    <div class="section-heading">
+        <h2>Выбор образца</h2>
+        <span>ВСЕ УРОВНИ ДОСТУПНЫ</span>
+    </div>
+    <div class="levels-grid" aria-live="polite">
+        @foreach (var level in Summaries) {
+            <button class="level-card" @onclick="() => OnLevelSelected.InvokeAsync(level.Id)">
+                <span class="index">ОБРАЗЕЦ / @level.Id.ToString("D2")</span>
+                <MiniGraph MoleculeCount="@level.MoleculeCount" ConnectionCount="@level.ConnectionCount" />
+                <strong>@level.Id.ToString("D2")</strong>
+                <span class="meta">@level.MoleculeCount УЗЛОВ · @level.ConnectionCount СВЯЗЕЙ</span>
+            </button>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LevelSummary> Summaries { get; set; } = Array.Empty<LevelSummary>();
+    [Parameter, EditorRequired] public EventCallback<int> OnLevelSelected { get; set; }
+}

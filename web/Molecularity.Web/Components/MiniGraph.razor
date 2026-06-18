@@ -1,0 +1,37 @@
+@* Pure presentation: small SVG thumbnail for the level card. No game logic. *@
+
+<svg class="mini-graph" viewBox="0 0 70 70">
+    <g stroke="#527267" stroke-width="1">
+        @foreach (var (x1, y1, x2, y2) in Lines) {
+            <line x1="@x1" y1="@y1" x2="@x2" y2="@y2" />
+        }
+    </g>
+    @foreach (var (cx, cy) in Points) {
+        <circle cx="@cx" cy="@cy" r="3" fill="#b8f24a" />
+    }
+</svg>
+
+@code {
+    [Parameter] public int MoleculeCount { get; set; }
+    [Parameter] public int ConnectionCount { get; set; }
+
+    private IReadOnlyList<(double X, double Y)> Points { get; set; } = Array.Empty<(double, double)>();
+    private IReadOnlyList<(double X1, double Y1, double X2, double Y2)> Lines { get; set; } =
+        Array.Empty<(double, double, double, double)>();
+
+    protected override void OnParametersSet() {
+        int count = Math.Min(MoleculeCount, 6);
+        var pts = new List<(double X, double Y)>(count);
+        for (int i = 0; i < count; i++) {
+            double a = i * Math.PI * 2 / count - Math.PI / 2;
+            pts.Add((35 + Math.Cos(a) * 25, 35 + Math.Sin(a) * 25));
+        }
+        Points = pts;
+
+        var lines = new List<(double, double, double, double)>();
+        for (int i = 1; i < pts.Count; i++) {
+            lines.Add((pts[i - 1].X, pts[i - 1].Y, pts[i].X, pts[i].Y));
+        }
+        Lines = lines;
+    }
+}

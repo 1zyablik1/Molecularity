@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Molecularity.Core\Molecularity.Core.csproj" />
+    <ProjectReference Include="..\..\tools\Molecularity.Solver\Molecularity.Solver.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,102 @@
+@using Molecularity.Web.Services
+
+<section class="game-view">
+    <div class="game-heading">
+        <div>
+            <button class="back-button" @onclick="OnBack">← ВСЕ ОБРАЗЦЫ</button>
+            <p class="eyebrow">АКТИВНЫЙ ЭКСПЕРИМЕНТ</p>
+            <h1>Образец <span>@Level.LevelId.ToString("D2")</span></h1>
+        </div>
+        <div class="legend">
+            <span><i class="dot simple"></i> ПРОСТАЯ</span>
+            <span><i class="dot parasite"></i> ПАРАЗИТ</span>
+            <span><i class="dot shield"></i> ЩИТ</span>
+            <span><i class="dot anchor"></i> ЯКОРЬ</span>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="board-card">
+            <div class="board-toolbar">
+                <span>@HintText</span>
+                <span class="live-indicator"><i></i> СЕССИЯ АКТИВНА</span>
+            </div>
+
+            <MoleculeGraphView
+                Molecules="@Result.Molecules"
+                Connections="@Result.Connections"
+                SelectedItem="@SelectedItem"
+                SelectedTargets="@SelectedTargets"
+                CulpritId="@Result.CulpritId"
+                OnMoleculeClick="OnMoleculeClick" />
+
+            @if (Result.Status != GameStatus.InProgress) {
+                <div class="result-overlay">
+                    <p>@(Result.Status == GameStatus.Win ? "РЕАКЦИЯ ЗАВЕРШЕНА" : "КРИТИЧЕСКАЯ НЕСТАБИЛЬНОСТЬ")</p>
+                    <h2>@(Result.Status == GameStatus.Win ? "Сеть очищена" : "Распад")</h2>
+                    <p>@(Result.Status == GameStatus.Win
+                          ? $"Уровень пройден за {Result.TurnsTaken} ходов"
+                          : "Одна из молекул достигла нулевого значения")</p>
+                    <button class="primary-button" @onclick="OnRestart">ПОВТОРИТЬ УРОВЕНЬ</button>
+                    <button class="text-button" @onclick="OnBack">К СПИСКУ УРОВНЕЙ</button>
+                </div>
+            }
+        </div>
+
+        <aside class="inventory-panel">
+            <div class="panel-title">
+                <span>ИНСТРУМЕНТЫ</span><small>@ItemsPerType × КАЖДЫЙ</small>
+            </div>
+            <div class="items">
+                @foreach (var (type, info) in ItemInfos) {
+                    int count = Result.Inventory.Counts.TryGetValue(type.ToString(), out int c) ? c : 0;
+                    bool disabled = count == 0
+                        || Result.Status != GameStatus.InProgress
+                        || (type == LevelItemType.Undo && !Result.CanUndo);
+                    bool active = SelectedItem == type;
+
+                    <button class="item-button @(active ? "active" : "")"
+                            @onclick="() => OnItemClick.InvokeAsync(type)"
+                            disabled="@disabled">
+                        <span class="item-icon">@info.Icon</span>
+                        <span>
+                            <span class="item-name">@info.Name</span>
+                            <span class="item-desc">@info.Desc</span>
+                        </span>
+                        <span class="item-count">×@count</span>
+                    </button>
+                }
+            </div>
+            <div class="protocol">
+                <span>ПРОТОКОЛ</span>
+                <p>@Result.Message</p>
+            </div>
+        </aside>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public LevelConfig Level { get; set; } = null!;
+    [Parameter, EditorRequired] public ActionResult Result { get; set; } = null!;
+    [Parameter] public LevelItemType? SelectedItem { get; set; }
+    [Parameter] public IReadOnlyList<int> SelectedTargets { get; set; } = Array.Empty<int>();
+    [Parameter, EditorRequired] public EventCallback<int> OnMoleculeClick { get; set; }
+    [Parameter, EditorRequired] public EventCallback<LevelItemType> OnItemClick { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnBack { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnRestart { get; set; }
+
+    private const int ItemsPerType = 10;
+
+    private static readonly IReadOnlyList<(LevelItemType Type, ItemMetaInfo Info)> ItemInfos =
+        ItemMeta.All.Select(kv => (kv.Key, kv.Value)).ToList();
+
+    private string HintText {
+        get {
+            if (!SelectedItem.HasValue) return "ВЫБЕРИТЕ МОЛЕКУЛУ, ЧТОБЫ УДАЛИТЬ";
+            var info = ItemMeta.All[SelectedItem.Value];
+            return SelectedTargets.Count > 0
+                ? "ВЫБЕРИТЕ ВТОРУЮ СВЯЗАННУЮ МОЛЕКУЛУ"
+                : $"ЦЕЛЬ: {info.Name.ToUpperInvariant()}";
+        }
+    }
+}

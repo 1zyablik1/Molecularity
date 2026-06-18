@@ -1,0 +1,201 @@
+@page "/"
+@inject LevelService LevelSvc
+@inject GameService GameSvc
+
+<PageTitle>Molecularity</PageTitle>
+
+<div class="noise"></div>
+<main class="shell">
+    <header class="topbar">
+        <button class="brand" @onclick="ShowLevels" aria-label="К списку уровней">
+            <span class="brand-mark"><i></i><i></i><i></i></span>
+            <span>MOLECULARITY<small>chain reaction lab</small></span>
+        </button>
+        @if (_view == View.Game && _result != null) {
+            <div class="top-stats">
+                <span>ХОДЫ <b>@_result.TurnsTaken</b></span>
+                <span>ПРЕДМЕТЫ <b>@_result.ItemsUsed</b></span>
+                <button class="icon-button" @onclick="RestartLevel" title="Начать заново">↻</button>
+            </div>
+        }
+    </header>
+
+    @if (_view == View.Loading) {
+        <div style="padding:80px 0; color: var(--muted); font: 700 10px monospace; letter-spacing: .18em;">
+            ЗАГРУЗКА УРОВНЕЙ...
+        </div>
+    } else if (_view == View.Error) {
+        <div style="padding:80px 0; color: var(--danger);">
+            @_errorMessage
+        </div>
+    } else if (_view == View.Levels) {
+        <LevelList Summaries="LevelSvc.Summaries" OnLevelSelected="StartLevel" />
+    } else if (_view == View.Game && _result != null && _activeLevel != null) {
+        <GameBoard
+            Level="@_activeLevel"
+            Result="@_result"
+            SelectedItem="@_selectedItem"
+            SelectedTargets="@_selectedTargets"
+            OnMoleculeClick="HandleMoleculeClick"
+            OnItemClick="HandleItemClick"
+            OnBack="ShowLevels"
+            OnRestart="RestartLevel" />
+    }
+</main>
+
+@if (!string.IsNullOrEmpty(_toastMessage)) {
+    <div class="toast show" role="status">@_toastMessage</div>
+}
+
+@code {
+    private enum View { Loading, Error, Levels, Game }
+
+    private View _view = View.Loading;
+    private string? _errorMessage;
+    private string? _toastMessage;
+    private System.Timers.Timer? _toastTimer;
+
+    private LevelConfig? _activeLevel;
+    private ActionResult? _result;
+    private LevelItemType? _selectedItem;
+    private List<int> _selectedTargets = new();
+    private bool _busy;
+
+    // Item meta is in ItemMeta.All (shared with GameBoard)
+
+    protected override async Task OnInitializedAsync() {
+        try {
+            await LevelSvc.LoadAsync();
+            _view = View.Levels;
+        }
+        catch (Exception ex) {
+            _view = View.Error;
+            _errorMessage = $"Не удалось загрузить уровни: {ex.Message}";
+        }
+    }
+
+    private void ShowLevels() {
+        _view = View.Levels;
+        _result = null;
+        _activeLevel = null;
+        _selectedItem = null;
+        _selectedTargets.Clear();
+    }
+
+    private void StartLevel(int levelId) {
+        if (_busy) return;
+        LevelConfig? level = LevelSvc.Get(levelId);
+        if (level == null) { ShowToast("Уровень не найден"); return; }
+        _activeLevel = level;
+        _result = GameSvc.Start(level);
+        _selectedItem = null;
+        _selectedTargets.Clear();
+        _view = View.Game;
+    }
+
+    private void RestartLevel() {
+        if (_activeLevel != null) StartLevel(_activeLevel.LevelId);
+    }
+
+    private void HandleMoleculeClick(int moleculeId) {
+        if (_busy || _result?.Status != GameStatus.InProgress) return;
+
+        if (_selectedItem.HasValue) {
+            SelectTarget(moleculeId);
+            return;
+        }
+
+        ExecuteSafe(() => GameSvc.Turn(moleculeId));
+    }
+
+    private void HandleItemClick(LevelItemType type) {
+        if (_busy || _result?.Status != GameStatus.InProgress) return;
+
+        var targets = ItemMeta.All[type].Targets;
+
+        if (targets == 0) {
+            if (type == LevelItemType.Undo && !(_result?.CanUndo ?? false)) {
+                ShowToast("Откат пока недоступен");
+                return;
+            }
+            ExecuteSafe(() => GameSvc.UseInstantItem(type));
+            return;
+        }
+
+        // Toggle selection
+        _selectedItem = _selectedItem == type ? null : type;
+        _selectedTargets.Clear();
+    }
+
+    private void SelectTarget(int moleculeId) {
+        if (!_selectedItem.HasValue || _result == null) return;
+
+        if (_selectedTargets.Contains(moleculeId)) {
+            _selectedTargets.Remove(moleculeId);
+            return;
+        }
+
+        // Validate second target for ChainBreak
+        if (_selectedItem == LevelItemType.ChainBreak && _selectedTargets.Count == 1) {
+            int first = _selectedTargets[0];
+            bool connected = _result.Connections.Any(c =>
+                (c.FromId == first && c.ToId == moleculeId) ||
+                (c.ToId == first && c.FromId == moleculeId));
+            if (!connected) {
+                ShowToast("Выберите молекулу, связанную с первой");
+                return;
+            }
+        }
+
+        _selectedTargets.Add(moleculeId);
+
+        int requiredTargets = ItemMeta.All[_selectedItem.Value].Targets;
+        if (_selectedTargets.Count >= requiredTargets) {
+            CommitItemUse();
+        }
+    }
+
+    private void CommitItemUse() {
+        if (!_selectedItem.HasValue) return;
+        var type = _selectedItem.Value;
+        var targets = new List<int>(_selectedTargets);
+        _selectedItem = null;
+        _selectedTargets.Clear();
+
+        switch (type) {
+            case LevelItemType.Freeze:
+                ExecuteSafe(() => GameSvc.UseSingleTargetItem(type, targets[0]));
+                break;
+            case LevelItemType.ChainBreak:
+                ExecuteSafe(() => GameSvc.UseDoubleTargetItem(type, targets[0], targets[1]));
+                break;
+        }
+    }
+
+    private void ExecuteSafe(Func<ActionResult> action) {
+        _busy = true;
+        try {
+            _result = action();
+        }
+        catch (Exception ex) {
+            ShowToast(ex.Message);
+        }
+        finally {
+            _busy = false;
+        }
+    }
+
+    private void ShowToast(string message) {
+        _toastMessage = message;
+        _toastTimer?.Dispose();
+        _toastTimer = new System.Timers.Timer(2600);
+        _toastTimer.Elapsed += (_, _) => {
+            _toastMessage = null;
+            _toastTimer?.Dispose();
+            InvokeAsync(StateHasChanged);
+        };
+        _toastTimer.AutoReset = false;
+        _toastTimer.Start();
+    }
+
+}

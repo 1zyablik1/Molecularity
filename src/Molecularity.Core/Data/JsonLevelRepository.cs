@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Molecularity.Core.Data {
     public class JsonLevelRepository : ILevelRepository {
@@ -14,24 +12,16 @@ namespace Molecularity.Core.Data {
                 throw new DirectoryNotFoundException($"Levels directory not found: {levelsDirectory}");
             }
 
-            var options = new JsonSerializerOptions {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                Converters = { new JsonStringEnumConverter() }
-            };
-
             foreach (string filePath in Directory.GetFiles(levelsDirectory, "*.json")) {
                 string json = File.ReadAllText(filePath);
-                LevelConfig? level = JsonSerializer.Deserialize<LevelConfig>(json, options);
-                if (level == null) {
-                    throw new InvalidOperationException($"Failed to deserialize level from file: {Path.GetFileName(filePath)}");
+                LevelConfig level;
+                try {
+                    level = LevelJson.Parse(json);
                 }
-
-                LevelValidationResult result = level.Validate();
-                if (!result.IsValid) {
-                    string allErrors = string.Join("; ", result.Errors);
+                catch (InvalidOperationException ex) {
+                    string fileName = Path.GetFileName(filePath);
                     throw new InvalidOperationException(
-                        $"Level file '{Path.GetFileName(filePath)}' is invalid: {allErrors}");
+                        $"Level file '{fileName}' is invalid: {ex.Message}", ex);
                 }
 
                 if (_levels.ContainsKey(level.LevelId)) {

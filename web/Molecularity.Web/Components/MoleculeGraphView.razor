@@ -1,0 +1,83 @@
+@* SVG graph rendered entirely in C#/Razor. No game logic here — only presentation. *@
+@using Molecularity.Web.Services
+
+<svg class="graph" viewBox="0 0 1000 650" role="img" aria-label="Граф молекул">
+    @if (_positions != null) {
+        <g>
+            @foreach (var conn in Connections) {
+                if (_positions.TryGetValue(conn.FromId, out var a) &&
+                    _positions.TryGetValue(conn.ToId,   out var b)) {
+                    bool active = SelectedItem == LevelItemType.ChainBreak
+                        && SelectedTargets.Count == 1
+                        && (conn.FromId == SelectedTargets[0] || conn.ToId == SelectedTargets[0]);
+                    <line class="edge @(active ? "active" : "")"
+                          x1="@F(a.X)" y1="@F(a.Y)" x2="@F(b.X)" y2="@F(b.Y)" />
+                }
+            }
+        </g>
+        <g>
+            @foreach (var mol in Molecules) {
+                if (!_positions.TryGetValue(mol.Id, out var p)) continue;
+                bool selected = SelectedTargets.Contains(mol.Id);
+                bool culprit  = CulpritId == mol.Id;
+                string nodeClass = $"node {mol.Type.ToLowerInvariant()} {(selected ? "selected" : "")} {(culprit ? "culprit" : "")}";
+                string ariaLabel = $"{mol.Type}, {(mol.IsRevealed ? mol.Value.ToString() : "значение скрыто")}";
+                <g class="@nodeClass"
+                   tabindex="0"
+                   role="button"
+                   aria-label="@ariaLabel"
+                   transform="translate(@F(p.X) @F(p.Y))"
+                   @onclick="() => OnMoleculeClick.InvokeAsync(mol.Id)"
+                   @onkeydown="(e) => HandleKeyDown(e, mol.Id)">
+                    <circle class="halo" r="61" />
+                    <circle class="core" r="47" />
+                    <text class="value" y="7">@(mol.IsRevealed ? mol.Value.ToString() : "??")</text>
+                    <text class="type" y="72">@TypeLabel(mol.Type)</text>
+                </g>
+            }
+        </g>
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<MoleculeViewModel> Molecules { get; set; } = Array.Empty<MoleculeViewModel>();
+    [Parameter, EditorRequired] public IReadOnlyList<ConnectionViewModel> Connections { get; set; } = Array.Empty<ConnectionViewModel>();
+    [Parameter] public LevelItemType? SelectedItem { get; set; }
+    [Parameter] public IReadOnlyList<int> SelectedTargets { get; set; } = Array.Empty<int>();
+    [Parameter] public int? CulpritId { get; set; }
+    [Parameter, EditorRequired] public EventCallback<int> OnMoleculeClick { get; set; }
+
+    private Dictionary<int, (double X, double Y)>? _positions;
+    private int _lastMoleculeHash;
+
+    protected override void OnParametersSet() {
+        // Recompute layout when molecule set changes
+        int hash = Molecules.Aggregate(0, (h, m) => HashCode.Combine(h, m.Id));
+        if (hash != _lastMoleculeHash) {
+            _lastMoleculeHash = hash;
+            RecomputeLayout();
+        }
+    }
+
+    private void RecomputeLayout() {
+        var nodeIds = Molecules.Select(m => m.Id).ToList();
+        var edges   = Connections.Select(c => (c.FromId, c.ToId)).ToList();
+        _positions  = GraphLayout.Compute(nodeIds, edges);
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e, int id) {
+        if (e.Key == "Enter" || e.Key == " ") {
+            OnMoleculeClick.InvokeAsync(id);
+        }
+    }
+
+    private static string F(double v) => v.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string TypeLabel(string type) => type switch {
+        "Simple"  => "ПРОСТАЯ",
+        "Parasite" => "ПАРАЗИТ",
+        "Shield"  => "ЩИТ",
+        "Anchor"  => "ЯКОРЬ",
+        _         => type.ToUpperInvariant()
+    };
+}
