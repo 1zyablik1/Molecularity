@@ -48,9 +48,15 @@ ExportedObj/
 *.unityproj
 *.sln
 
-# Exception: .NET solution in dotnet/ folder
-!dotnet/**/*.csproj
-!dotnet/**/*.sln
+# Exception: hand-authored .NET projects/solution (not Unity-generated ones)
+!/Molecularity.sln
+!src/**/*.csproj
+!tests/**/*.csproj
+!tools/**/*.csproj
+
+# .NET build output (any project depth)
+[Bb]in/
+[Oo]bj/
 *.suo
 *.tmp
 *.user

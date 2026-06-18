@@ -12,7 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="levels\*.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <None Include="..\..\content\levels\*.json" Link="levels\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

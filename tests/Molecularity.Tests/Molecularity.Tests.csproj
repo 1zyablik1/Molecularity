@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Molecularity.Core\Molecularity.Core.csproj" />
+    <ProjectReference Include="..\..\src\Molecularity.Core\Molecularity.Core.csproj" />
   </ItemGroup>
 
 </Project>
