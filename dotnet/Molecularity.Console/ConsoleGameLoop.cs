@@ -53,9 +53,11 @@ public class ConsoleGameLoop {
             switch (session.Status) {
                 case GameStatus.Win:
                     _renderer.RenderVictory();
+                    _renderer.RenderMessage($"Stats: turns={session.Stats.TurnsTaken}, items used={session.Stats.ItemsUsed}");
                     break;
                 case GameStatus.Lose:
                     _renderer.RenderDefeat(_lastCulpritId);
+                    _renderer.RenderMessage($"Stats: turns={session.Stats.TurnsTaken}, items used={session.Stats.ItemsUsed}");
                     break;
             }
         }

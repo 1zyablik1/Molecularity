@@ -20,6 +20,10 @@ namespace Molecularity.Core.Domain {
                                && Status == GameStatus.InProgress
                                && _inventory.Count(LevelItemType.Undo) > 0;
 
+        public int TurnsTaken { get; private set; }
+        public int ItemsUsed { get; private set; }
+        public SessionStats Stats => new(TurnsTaken, ItemsUsed);
+
         public GameSession(LevelConfig levelConfig, PlayerInventory inventory) {
             _inventory = inventory;
             Graph = LevelBuilder.Build(levelConfig);
@@ -37,6 +41,7 @@ namespace Molecularity.Core.Domain {
             _previousSnapshot = Graph.TakeSnapshot();
             _lastActionWasUndo = false;
             TurnResult result = _turnExecutor.Execute(moleculeId);
+            TurnsTaken++;
 
             (bool IsLoss, int? CulpritId) lose = GameRules.IsLose(Graph);
             if (lose.IsLoss) {
@@ -72,11 +77,14 @@ namespace Molecularity.Core.Domain {
                 Graph.RestoreSnapshot(_previousSnapshot!);
                 _previousSnapshot = null;
                 _lastActionWasUndo = true;
+                ItemsUsed++;
+                TurnsTaken--;
                 return;
             }
 
             _inventory.Remove(item);
             item.Use(Graph);
+            ItemsUsed++;
         }
 
         public void UseSingleTargetItem(LevelItemType type, int targetId) {
@@ -91,6 +99,7 @@ namespace Molecularity.Core.Domain {
 
             _inventory.Remove(item);
             item.Use(targetId, Graph);
+            ItemsUsed++;
         }
 
         public void UseDoubleTargetItem(LevelItemType type, int fromId, int toId) {
@@ -105,6 +114,7 @@ namespace Molecularity.Core.Domain {
 
             _inventory.Remove(item);
             item.Use(fromId, toId, Graph);
+            ItemsUsed++;
         }
     }
 }

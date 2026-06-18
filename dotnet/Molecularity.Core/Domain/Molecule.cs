@@ -14,7 +14,7 @@ namespace Molecularity.Core.Domain {
         public bool IsAlive { get; private set; } = true;
         public bool IsRevealed { get; private set; }
 
-        private IAbility Ability { get; set; }
+        private IAbility Ability { get; }
 
         private readonly List<IPassiveProperty> _passives = new();
 
@@ -72,7 +72,6 @@ namespace Molecularity.Core.Domain {
             _passives.AddRange(moleculeSnapshot.Passives.Select(p => p.Clone()));
         }
 
-        //TODO: maybe move to some helper class?
         public IEnumerable<IPassiveProperty> ClonePassives() {
             return _passives.Select(passive => passive.Clone()).ToList();
         }

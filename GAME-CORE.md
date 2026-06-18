@@ -101,8 +101,11 @@ dotnet/
 - **`MoleculeGraph`** — молекулы + двусторонние связи (adjacency). Умеет
   `TakeSnapshot()` / `RestoreSnapshot()` (для undo).
 - **`MoleculeType`** — `Simple`, `Shield`, `Anchor`, `Parasite`.
-- **`GameSession`** — оркестрирует один уровень: граф, статус, инвентарь, undo.
+- **`GameSession`** — оркестрирует один уровень: граф, статус, инвентарь, undo, статистика.
 - **`GameStatus`** — `InProgress`, `Win`, `Lose`.
+- **`SessionStats`** (`session.Stats`) — статистика для меты (звёзды/ачивки):
+  `TurnsTaken` (нетто-число совершённых ходов: undo вычитает один) и `ItemsUsed`
+  (число потраченных предметов, включая Undo).
 
 ---
 
@@ -298,6 +301,8 @@ dotnet/
   `MoleculeAlreadyRemovedException`, `UnknownMoleculeTypeException`. Все `throw new
   Exception(...)` в `MoleculeGraph`, `TurnExecutor`, `MoleculeFactory` заменены на
   соответствующие доменные исключения.
+- **Статистика сессии `SessionStats`** (`session.Stats`): `TurnsTaken` (нетто-ходы, undo
+  вычитает) и `ItemsUsed` (потрачено предметов, включая Undo) — данные для меты (звёзды).
 - **Юнит-тесты** (88 шт.): граф + защитные исключения (теперь с конкретными типами),
   ход/`TurnExecutor`, win/lose с граничными значениями (0/1/отриц.), «спасение последним
   кликом», щит, предметы (RevealAll, PlusOneAll, ChainBreak, Freeze) + несоответствие
@@ -306,6 +311,11 @@ dotnet/
   `JsonLevelRepository` (8 сценариев). **Новые**: `TurnEventsTests` (4 сценария событий),
   `PassiveCloneContractTests` (контракт Clone + регистрация всех конкретных пассивок).
   `BalanceConfigTests` (5 сценариев: дефолты, partial JSON override, null balance, Shield 3 turns, AnchorDecrement -3).
+  `GameSessionStatsTests` (6 сценариев: счёт ходов/предметов, undo-вычитание, неуспешные действия не считаются).
+  `InteractionCornerTests` (7 сценариев — предмет×тип и баланс: Freeze гасит паразита,
+  ChainBreak уменьшает декремент паразита и рвёт раскрытие, override base-декремента,
+  PlusOneAll×2 = ревайв, Anchor без соседей без ability-событий, undo недоступен после победы).
+- **Всего 101 тест.**
 
 ### ⏳ Ещё не сделано / требует доработки
 - **Глобальный файл баланса** — единый `balance.json` для всех уровней сразу (сейчас только per-level через `balance`-блок в каждом JSON).
