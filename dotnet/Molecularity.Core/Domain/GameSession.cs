@@ -25,7 +25,8 @@ namespace Molecularity.Core.Domain {
             Graph = LevelBuilder.Build(levelConfig);
             Status = GameStatus.InProgress;
 
-            _turnExecutor = new TurnExecutor(Graph);
+            BalanceConfig balance = levelConfig.Balance ?? BalanceConfig.Default;
+            _turnExecutor = new TurnExecutor(Graph, balance.BaseDecrement);
         }
 
         public TurnResult TakeTurn(int moleculeId) {

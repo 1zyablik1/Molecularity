@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Molecularity.Core.Data {
-    public record LevelConfig(int LevelId, List<MoleculeConfig> Molecules, List<ConnectionConfig> Connections, int? LayoutSeed = null) {
+    public record LevelConfig(int LevelId, List<MoleculeConfig> Molecules, List<ConnectionConfig> Connections, int? LayoutSeed = null, BalanceConfig? Balance = null) {
         public LevelValidationResult Validate() {
             var errors = new List<string>();
 
@@ -44,6 +44,15 @@ namespace Molecularity.Core.Data {
             foreach (MoleculeConfig mol in Molecules) {
                 if (mol.InitialValue < 1) {
                     errors.Add($"Molecule id {mol.Id} has InitialValue < 1.");
+                }
+            }
+
+            if (Balance != null) {
+                if (Balance.FreezeTurns < 1) {
+                    errors.Add("Balance.FreezeTurns must be >= 1.");
+                }
+                if (Balance.ShieldTurns < 0) {
+                    errors.Add("Balance.ShieldTurns must be >= 0.");
                 }
             }
 

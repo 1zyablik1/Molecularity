@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
+using Molecularity.Core.Data;
 using Molecularity.Core.Domain.Exceptions;
 
 namespace Molecularity.Core.Domain {
     public class TurnExecutor {
-        private const int DeltaPerTurn = GameBalance.BaseDecrement;
-
         private readonly MoleculeGraph _graph;
+        private readonly int _baseDecrement;
 
-        public TurnExecutor(MoleculeGraph graph) {
+        public TurnExecutor(MoleculeGraph graph, int baseDecrement = GameBalance.BaseDecrement) {
             _graph = graph;
+            _baseDecrement = baseDecrement;
         }
 
         public TurnResult Execute(int moleculeId) {
@@ -35,7 +36,7 @@ namespace Molecularity.Core.Domain {
             }
 
             foreach (Molecule alive in _graph.GetAliveAll()) {
-                int delta = alive.GetModifiedDelta(DeltaPerTurn, _graph);
+                int delta = alive.GetModifiedDelta(_baseDecrement, _graph);
                 alive.ApplyDelta(delta);
                 alive.TickPassives(_graph);
                 events.Add(new ValueChangedEvent(alive.Id, delta, alive.Value, alive.IsRevealed, ValueChangeReason.Decrement));

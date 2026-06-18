@@ -67,6 +67,9 @@ dotnet/
 {
   "levelId": 1,
   "layoutSeed": 42,
+  "balance": {
+    "shieldTurns": 3
+  },
   "molecules": [
     { "id": 1, "type": "Simple",  "initialValue": 3, "isInitiallyRevealed": true },
     { "id": 2, "type": "Parasite","initialValue": 5, "isInitiallyRevealed": false }
@@ -80,6 +83,12 @@ dotnet/
 - `levelId` — уникальный числовой идентификатор уровня.
 - `type` — строка `"Simple"` / `"Parasite"` / `"Shield"` / `"Anchor"` (case-insensitive).
 - `layoutSeed` — **опциональное** целое число. Используется только **Unity** для воспроизводимого автоматического расположения узлов на экране. Core читает поле и хранит его в `LevelConfig`, но никак не использует в логике. Если поле отсутствует — `null`; Unity тогда вычисляет seed из `LevelId`.
+- `balance` — **опциональный** объект переопределения баланса для данного уровня. Если поле отсутствует — `LevelConfig.Balance` равен `null`, и все значения берутся из `BalanceConfig.Default` (= `GameBalance`). Если объект присутствует — можно переопределить любое подмножество полей; пропущенные поля также наследуют значения из `GameBalance`. Поля объекта:
+  - `baseDecrement` (int, default: −1) — базовый декремент за ход.
+  - `shieldTurns` (int, default: 2) — число ходов, на которые щит блокирует декремент.
+  - `freezeTurns` (int, default: 3) — число ходов заморозки от предмета Freeze.
+  - `anchorDecrement` (int, default: −2) — декремент Anchor за ход.
+  - `anchorHeal` (int, default: 1) — лечение соседей от абилки Anchor.
 - **Позиции молекул НЕ являются данными**: Unity вычисляет раскладку из топологии связей (+ `layoutSeed`). Core не знает ни об одном `x`/`y`.
 - При загрузке каждый файл проходит `LevelConfig.Validate()`. Невалидный файл = `InvalidOperationException` с именем файла и всеми ошибками.
 
@@ -174,7 +183,7 @@ dotnet/
 | **Shield** | первые `SHIELD_TURNS` ходов 0, потом −1 | нет | `ShieldPassive` | выиграть время |
 | **Anchor** | **−2** | **+1 всем живым соседям** | нет | рискованный «донор» |
 
-**Константы (позже выносятся в JSON-конфиги):**
+**Константы (дефолты в `GameBalance`, переопределяются per-level через `BalanceConfig` в JSON-блоке `balance`):**
 - `ANCHOR_DECREMENT = -2`
 - `SHIELD_TURNS = 2`
 - `FREEZE_TURNS = 3` (длительность заморозки от предмета)
@@ -264,7 +273,7 @@ dotnet/
   соседям на клик, −2 за ход)**. `MoleculeFactory` маппит все типы.
 - Пассивки: `ShieldPassive`, `FreezePassive`, `NoPassive`, `NeighborCountDecrementPassive`
   (паразит), `FlatDecrementPassive` (якорь). Абилка `HealNeighborsAbility` (якорь).
-- Константы баланса вынесены в `GameBalance` (Anchor/Shield/Freeze/base decrement).
+- Константы баланса вынесены в `GameBalance` (Anchor/Shield/Freeze/base decrement); переопределяются per-level через `BalanceConfig` (JSON-блок `balance`).
 - Инвентарь + 5 предметов (RevealAll, PlusOneAll, Freeze, ChainBreak, Undo).
 - Снапшоты графа (`TakeSnapshot` / `RestoreSnapshot`).
 - **Undo мгновенный** — `UseInstantItem(Undo)` сразу откатывает последний ход и тратит
@@ -289,16 +298,17 @@ dotnet/
   `MoleculeAlreadyRemovedException`, `UnknownMoleculeTypeException`. Все `throw new
   Exception(...)` в `MoleculeGraph`, `TurnExecutor`, `MoleculeFactory` заменены на
   соответствующие доменные исключения.
-- **Юнит-тесты** (83 шт.): граф + защитные исключения (теперь с конкретными типами),
+- **Юнит-тесты** (88 шт.): граф + защитные исключения (теперь с конкретными типами),
   ход/`TurnExecutor`, win/lose с граничными значениями (0/1/отриц.), «спасение последним
   кликом», щит, предметы (RevealAll, PlusOneAll, ChainBreak, Freeze) + несоответствие
   категорий, инвентарь, пассивки изолированно (Shield/Freeze/Clone), undo (включая
   восстановление счётчика пассивки). Фабрика. Валидация уровней (7 сценариев).
   `JsonLevelRepository` (8 сценариев). **Новые**: `TurnEventsTests` (4 сценария событий),
   `PassiveCloneContractTests` (контракт Clone + регистрация всех конкретных пассивок).
+  `BalanceConfigTests` (5 сценариев: дефолты, partial JSON override, null balance, Shield 3 turns, AnchorDecrement -3).
 
 ### ⏳ Ещё не сделано / требует доработки
-- **Перенос констант `GameBalance` в JSON-конфиги** (сейчас они в коде).
+- **Глобальный файл баланса** — единый `balance.json` для всех уровней сразу (сейчас только per-level через `balance`-блок в каждом JSON).
 - **Инструмент экспорта Google Sheets → JSON** — отдельный будущий .NET-проект вне Core.
 
 ---

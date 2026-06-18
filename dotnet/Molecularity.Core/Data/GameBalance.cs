@@ -1,7 +1,7 @@
-namespace Molecularity.Core.Domain {
+namespace Molecularity.Core.Data {
     /// <summary>
     /// Central place for tunable gameplay constants.
-    /// TODO: move to JSON level/config files (see GAME-CORE.md).
+    /// These are defaults; they can be overridden per-level via <see cref="BalanceConfig"/> (JSON <c>balance</c> block).
     /// </summary>
     public static class GameBalance {
         public const int BaseDecrement = -1;

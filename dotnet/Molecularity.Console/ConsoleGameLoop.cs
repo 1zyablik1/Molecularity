@@ -25,7 +25,8 @@ public class ConsoleGameLoop {
         int chosenId = _input.RequestLevelId(allIds);
         LevelConfig level = _repository.Get(chosenId);
         //TODO: update inventory
-        PlayerInventory inventory = MockInventory();
+        BalanceConfig balance = level.Balance ?? BalanceConfig.Default;
+        PlayerInventory inventory = MockInventory(balance);
         var session = new GameSession(level, inventory);
 
         Loop(session, inventory);
@@ -108,11 +109,11 @@ public class ConsoleGameLoop {
         }
     }
 
-    private PlayerInventory MockInventory() {
+    private PlayerInventory MockInventory(BalanceConfig balance) {
         var inventory = new PlayerInventory();
         inventory.Add(new RevealAllItem());
         inventory.Add(new PlusOneAllItem());
-        inventory.Add(new FreezeItem());
+        inventory.Add(new FreezeItem(balance.FreezeTurns));
         inventory.Add(new ChainBreakItem());
         inventory.Add(new UndoItem());
 

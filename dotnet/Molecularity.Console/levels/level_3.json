@@ -1,5 +1,6 @@
 {
   "levelId": 3,
+  "balance": { "shieldTurns": 3 },
   "molecules": [
     { "id": 1, "type": "Shield", "initialValue": 5, "isInitiallyRevealed": true },
     { "id": 2, "type": "Anchor", "initialValue": 6, "isInitiallyRevealed": false },
