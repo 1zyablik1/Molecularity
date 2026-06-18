@@ -18,9 +18,20 @@ public class ConsoleRenderer : IGameRenderer {
     public void RenderTurnResult(TurnResult result) {
         System.Console.WriteLine($"\nTurn executed on molecule ID: {result.RemovedMoleculeId}");
 
-        foreach (MoleculeValueChange change in result.Changes) {
-            string newValue = change.IsRevealed ? change.NewValue.ToString() : "??";
-            System.Console.WriteLine($"Molecule ID: {change.MoleculeId} | Value Change: {change.Delta} | New Value: {newValue}");
+        foreach (TurnEvent ev in result.Events) {
+            switch (ev) {
+                case MoleculeRemovedEvent removed:
+                    System.Console.WriteLine($"Molecule ID: {removed.MoleculeId} | removed");
+                    break;
+                case MoleculeRevealedEvent revealed:
+                    System.Console.WriteLine($"Molecule ID: {revealed.MoleculeId} | revealed");
+                    break;
+                case ValueChangedEvent changed:
+                    string newValue = changed.IsRevealed ? changed.NewValue.ToString() : "??";
+                    string reason = changed.Reason == ValueChangeReason.Ability ? "ability" : "decrement";
+                    System.Console.WriteLine($"Molecule ID: {changed.MoleculeId} | Delta: {changed.Delta:+0;-0;0} | New Value: {newValue} | Reason: {reason}");
+                    break;
+            }
         }
     }
 

@@ -21,7 +21,7 @@ public class GameSessionTests {
         Assert.Equal(GameStatus.InProgress, session.Status);
         Assert.Equal(4, session.Graph.GetMolecule(2).Value);
         Assert.Equal(4, session.Graph.GetMolecule(3).Value);
-        Assert.All(result.Changes, c => Assert.Equal(-1, c.Delta));
+        Assert.All(result.Events.OfType<ValueChangedEvent>().Where(c => c.Reason == ValueChangeReason.Decrement), c => Assert.Equal(-1, c.Delta));
     }
 
     [Fact]

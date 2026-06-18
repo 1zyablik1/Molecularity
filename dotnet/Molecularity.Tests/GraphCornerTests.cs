@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
+using Molecularity.Core.Domain.Exceptions;
 
 namespace Molecularity.Tests;
 
@@ -12,7 +12,7 @@ public class GraphCornerTests {
         var graph = new MoleculeGraph();
         graph.AddMolecule(MoleculeFactory.Create(TestData.Simple(1, 3)));
 
-        Assert.Throws<Exception>(() => graph.AddMolecule(MoleculeFactory.Create(TestData.Simple(1, 5))));
+        Assert.Throws<DuplicateMoleculeException>(() => graph.AddMolecule(MoleculeFactory.Create(TestData.Simple(1, 5))));
     }
 
     [Fact]
@@ -20,13 +20,13 @@ public class GraphCornerTests {
         var graph = new MoleculeGraph();
         graph.AddMolecule(MoleculeFactory.Create(TestData.Simple(1, 3)));
 
-        Assert.Throws<Exception>(() => graph.AddConnection(1, 99));
+        Assert.Throws<MoleculeNotFoundException>(() => graph.AddConnection(1, 99));
     }
 
     [Fact]
     public void GetMolecule_Unknown_Throws() {
         var graph = new MoleculeGraph();
-        Assert.Throws<Exception>(() => graph.GetMolecule(42));
+        Assert.Throws<MoleculeNotFoundException>(() => graph.GetMolecule(42));
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class GraphCornerTests {
     [Fact]
     public void RemoveMolecule_Unknown_Throws() {
         var graph = new MoleculeGraph();
-        Assert.Throws<Exception>(() => graph.RemoveMolecule(42));
+        Assert.Throws<MoleculeNotFoundException>(() => graph.RemoveMolecule(42));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class GraphCornerTests {
             new List<ConnectionConfig> { new(1, 2) });
 
         graph.RemoveMolecule(1);
-        Assert.Throws<Exception>(() => graph.RemoveMolecule(1));
+        Assert.Throws<MoleculeAlreadyRemovedException>(() => graph.RemoveMolecule(1));
     }
 
     [Fact]

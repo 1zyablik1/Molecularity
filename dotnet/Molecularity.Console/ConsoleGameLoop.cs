@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
 using Molecularity.Core.Interfaces;
@@ -19,8 +21,9 @@ public class ConsoleGameLoop {
     }
 
     public void Run() {
-        //TODO: allow user to select level
-        LevelConfig level = _repository.Get(1);
+        IReadOnlyList<int> allIds = _repository.GetAll().ToList();
+        int chosenId = _input.RequestLevelId(allIds);
+        LevelConfig level = _repository.Get(chosenId);
         //TODO: update inventory
         PlayerInventory inventory = MockInventory();
         var session = new GameSession(level, inventory);

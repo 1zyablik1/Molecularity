@@ -53,8 +53,35 @@ dotnet/
 │   ├── Player/             # PlayerInventory
 │   └── Interfaces/         # IGameRenderer, IInputProvider (порты к слою отображения)
 ├── Molecularity.Console/   # консольный раннер (Renderer + InputProvider + GameLoop)
-└── Molecularity.Tests/     # xUnit (пока пусто — см. статус)
+│   └── levels/             # JSON-файлы уровней (копируются в output-папку)
+└── Molecularity.Tests/     # xUnit-тесты
 ```
+
+---
+
+## 3а. Формат JSON-уровней
+
+Каждый уровень — отдельный `*.json`-файл в папке `levels/`. Схема:
+
+```json
+{
+  "levelId": 1,
+  "layoutSeed": 42,
+  "molecules": [
+    { "id": 1, "type": "Simple",  "initialValue": 3, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Parasite","initialValue": 5, "isInitiallyRevealed": false }
+  ],
+  "connections": [
+    { "fromId": 1, "toId": 2 }
+  ]
+}
+```
+
+- `levelId` — уникальный числовой идентификатор уровня.
+- `type` — строка `"Simple"` / `"Parasite"` / `"Shield"` / `"Anchor"` (case-insensitive).
+- `layoutSeed` — **опциональное** целое число. Используется только **Unity** для воспроизводимого автоматического расположения узлов на экране. Core читает поле и хранит его в `LevelConfig`, но никак не использует в логике. Если поле отсутствует — `null`; Unity тогда вычисляет seed из `LevelId`.
+- **Позиции молекул НЕ являются данными**: Unity вычисляет раскладку из топологии связей (+ `layoutSeed`). Core не знает ни об одном `x`/`y`.
+- При загрузке каждый файл проходит `LevelConfig.Validate()`. Невалидный файл = `InvalidOperationException` с именем файла и всеми ошибками.
 
 ---
 
@@ -97,6 +124,26 @@ dotnet/
   кликом», убрав опасную молекулу.
 - `+1` от абилки якоря и от предмета `PlusOneAll` идёт через `ApplyDelta` напрямую и
   **не** проходит через `ModifyDelta` — то есть щит/заморозка лечение не режут.
+
+### 5a. Гранулярные события `TurnResult.Events`
+
+`TurnResult` содержит `IReadOnlyList<TurnEvent>` — упорядоченный хронологически список
+событий хода. Это **контракт для Unity-рендерера**: каждое событие соответствует ровно
+одному изменению состояния графа.
+
+Три типа событий:
+
+| Тип | Поля | Описание |
+|-----|------|----------|
+| `ValueChangedEvent` | `MoleculeId`, `Delta`, `NewValue`, `IsRevealed`, `Reason` | Значение молекулы изменилось. `Reason` = `Ability` (абилка) или `Decrement` (ход-декремент). |
+| `MoleculeRemovedEvent` | `MoleculeId` | Молекула удалена с поля. |
+| `MoleculeRevealedEvent` | `MoleculeId` | Молекула перешла из скрытой в раскрытую (туман снят). |
+
+**Гарантированный порядок** событий в списке:
+1. `ValueChangedEvent(Reason=Ability)` — для каждой молекулы, затронутой абилкой кликнутой молекулы.
+2. `MoleculeRemovedEvent` — удаление кликнутой молекулы.
+3. `MoleculeRevealedEvent` — по одному для каждого соседа, который был скрыт до удаления.
+4. `ValueChangedEvent(Reason=Decrement)` — для каждой оставшейся живой молекулы.
 
 ---
 
@@ -147,6 +194,18 @@ dotnet/
 - **`FreezePassive(turns)`** — `ModifyDelta → 0` на `turns` ходов, потом истекает.
   Накладывается предметом Freeze и **действует со следующего хода** (использование
   предмета само по себе ходом не является).
+
+**Порядок применения пассивок и их приоритет:**
+Пассивки применяются к дельте в порядке их списка (`_passives`). «Величинные» пассивки
+(`NeighborCountDecrementPassive` у Parasite, `FlatDecrementPassive` у Anchor) задают
+итоговую величину декремента, заменяя входящее значение. «Блокирующие» пассивки
+(`ShieldPassive`, `FreezePassive`) возвращают `0` и должны идти **последними** в
+списке, чтобы их блок имел приоритет над остальными. Пассивка `FreezePassive`,
+наложенная предметом Freeze, добавляется в конец списка (`AddPassive`), поэтому она
+**всегда побеждает** другие пассивки. Каждый `IPassiveProperty` **обязан** реализовывать
+`Clone()` корректно (глубокая копия внутренних счётчиков) — иначе undo восстановит
+данные некорректно. Правильность Clone() принудительно проверяется контрактным тестом
+`PassiveCloneContractTests`.
 
 ---
 
@@ -212,15 +271,35 @@ dotnet/
   предмет; `CanUndo` учитывает наличие предмета в инвентаре.
 - **Предметы и undo подключены к консольному циклу** (выбор действия: клик / предмет /
   выход; диспетчеризация instant/single/double-target предметов).
-- **Юнит-тесты** (55 шт.): граф + защитные исключения, ход/`TurnExecutor`, win/lose с
-  граничными значениями (0/1/отриц.), «спасение последним кликом», щит, предметы
-  (RevealAll, PlusOneAll, ChainBreak, Freeze) + несоответствие категорий, инвентарь,
-  пассивки изолированно (Shield/Freeze/Clone), undo (включая восстановление счётчика
-  пассивки). Фабрика: тест-маркер, что `Anchor` пока бросает (известный пробел).
+- **JSON-уровни и выбор уровня**: `JsonLevelRepository` загружает `*.json` из папки
+  `levels/`, валидирует каждый через `LevelConfig.Validate()`, бросает
+  `InvalidOperationException` при ошибке. Консоль использует `JsonLevelRepository`
+  (вместо хардкода) и предлагает игроку выбрать уровень перед стартом.
+- **`LevelConfig.Validate()`** — собирает ВСЕ нарушения и возвращает
+  `LevelValidationResult` с `Errors` / `IsValid`.
+- **Опциональный `LayoutSeed`** в `LevelConfig` — хранит seed для Unity-раскладки;
+  Core читает, но не использует; `null` если не указан в JSON.
+- **Гранулярные события `TurnResult.Events`**: `TurnResult` содержит
+  `IReadOnlyList<TurnEvent>` с тремя типами событий (`ValueChangedEvent`,
+  `MoleculeRemovedEvent`, `MoleculeRevealedEvent`) и `ValueChangeReason` (`Ability` /
+  `Decrement`). Порядок событий хронологически гарантирован (ability → removed → revealed
+  → decrement) — это контракт для Unity-рендерера.
+- **Доменные исключения**: иерархия `MolecularityException` →
+  `MoleculeNotFoundException`, `DuplicateMoleculeException`,
+  `MoleculeAlreadyRemovedException`, `UnknownMoleculeTypeException`. Все `throw new
+  Exception(...)` в `MoleculeGraph`, `TurnExecutor`, `MoleculeFactory` заменены на
+  соответствующие доменные исключения.
+- **Юнит-тесты** (83 шт.): граф + защитные исключения (теперь с конкретными типами),
+  ход/`TurnExecutor`, win/lose с граничными значениями (0/1/отриц.), «спасение последним
+  кликом», щит, предметы (RevealAll, PlusOneAll, ChainBreak, Freeze) + несоответствие
+  категорий, инвентарь, пассивки изолированно (Shield/Freeze/Clone), undo (включая
+  восстановление счётчика пассивки). Фабрика. Валидация уровней (7 сценариев).
+  `JsonLevelRepository` (8 сценариев). **Новые**: `TurnEventsTests` (4 сценария событий),
+  `PassiveCloneContractTests` (контракт Clone + регистрация всех конкретных пассивок).
 
 ### ⏳ Ещё не сделано / требует доработки
-- **JSON-уровни и выбор уровня** (`JsonLevelRepository`, конфиги, экран выбора).
 - **Перенос констант `GameBalance` в JSON-конфиги** (сейчас они в коде).
+- **Инструмент экспорта Google Sheets → JSON** — отдельный будущий .NET-проект вне Core.
 
 ---
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Molecularity.Core.Domain;
 using Molecularity.Core.Interfaces;
 using Molecularity.Core.Items;
@@ -6,6 +7,18 @@ using Molecularity.Core.Player;
 namespace Molecularity.Console.ConsoleInputProvider;
 
 public class ConsoleInputProvider : IInputProvider {
+    public int RequestLevelId(IReadOnlyList<int> levelIds) {
+        System.Console.WriteLine("Available levels: " + string.Join(", ", levelIds));
+        System.Console.WriteLine("Enter a level id to play:");
+        while (true) {
+            string? input = System.Console.ReadLine();
+            if (int.TryParse(input, out int id) && levelIds.Contains(id)) {
+                return id;
+            }
+            System.Console.WriteLine($"Invalid choice. Enter one of: {string.Join(", ", levelIds)}");
+        }
+    }
+
     public PlayerAction RequestAction(GameSession session) {
         while (true) {
             string undoHint = session.CanUndo ? " (undo available)" : "";

@@ -48,9 +48,7 @@ namespace Molecularity.Core.Domain {
             IsRevealed = true;
         }
 
-        public void UseAbility(MoleculeGraph graph) {
-            Ability.Execute(this, graph);
-        }
+        public IReadOnlyList<TurnEvent> UseAbility(MoleculeGraph graph) => Ability.Execute(this, graph);
 
         public void AddPassive(IPassiveProperty passive) {
             _passives.Add(passive);

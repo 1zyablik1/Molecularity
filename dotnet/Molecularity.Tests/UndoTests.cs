@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
 using Molecularity.Core.Items;
@@ -96,6 +97,6 @@ public class UndoTests {
 
         Assert.Equal(GameStatus.InProgress, session.Status); // still protected → not a loss
         Assert.Equal(1, session.Graph.GetMolecule(1).Value);
-        Assert.DoesNotContain(redo.Changes, c => c.MoleculeId == 1 && c.Delta != 0);
+        Assert.DoesNotContain(redo.Events.OfType<ValueChangedEvent>(), c => c.MoleculeId == 1 && c.Delta != 0);
     }
 }

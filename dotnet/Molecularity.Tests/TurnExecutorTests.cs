@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
+using Molecularity.Core.Domain.Exceptions;
 
 namespace Molecularity.Tests;
 
@@ -20,7 +20,7 @@ public class TurnExecutorTests {
             new List<ConnectionConfig> { new(1, 2) });
 
         executor.Execute(1);
-        Assert.Throws<Exception>(() => executor.Execute(1));
+        Assert.Throws<MoleculeAlreadyRemovedException>(() => executor.Execute(1));
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class TurnExecutorTests {
             new List<MoleculeConfig> { TestData.Simple(1, 5) },
             new List<ConnectionConfig>());
 
-        Assert.Throws<Exception>(() => executor.Execute(999));
+        Assert.Throws<MoleculeNotFoundException>(() => executor.Execute(999));
     }
 
     [Fact]
@@ -40,7 +40,8 @@ public class TurnExecutorTests {
 
         TurnResult result = executor.Execute(1);
 
-        Assert.DoesNotContain(result.Changes, c => c.MoleculeId == 1);
+        Assert.DoesNotContain(result.Events.OfType<ValueChangedEvent>(), c => c.MoleculeId == 1);
+        Assert.Contains(result.Events.OfType<MoleculeRemovedEvent>(), e => e.MoleculeId == 1);
         Assert.Equal(1, result.RemovedMoleculeId);
     }
 
@@ -55,7 +56,6 @@ public class TurnExecutorTests {
 
         TurnResult result = executor.Execute(1);
 
-        MoleculeValueChange change = result.Changes.Single(c => c.MoleculeId == 2);
-        Assert.True(change.IsRevealed);
+        Assert.Contains(result.Events.OfType<MoleculeRevealedEvent>(), e => e.MoleculeId == 2);
     }
 }

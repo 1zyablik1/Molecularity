@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
 namespace Molecularity.Core.Domain {
-    public record TurnResult(int RemovedMoleculeId, List<MoleculeValueChange> Changes, int? CulpritId = null);
-
-    public record MoleculeValueChange(int MoleculeId, int Delta, int NewValue, bool IsRevealed);
+    public record TurnResult(int RemovedMoleculeId, IReadOnlyList<TurnEvent> Events, int? CulpritId = null);
 }

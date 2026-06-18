@@ -1,0 +1,13 @@
+{
+  "levelId": 1,
+  "layoutSeed": 1,
+  "molecules": [
+    { "id": 1, "type": "Simple", "initialValue": 3, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Simple", "initialValue": 2, "isInitiallyRevealed": false },
+    { "id": 3, "type": "Simple", "initialValue": 1, "isInitiallyRevealed": false }
+  ],
+  "connections": [
+    { "fromId": 1, "toId": 2 },
+    { "fromId": 2, "toId": 3 }
+  ]
+}

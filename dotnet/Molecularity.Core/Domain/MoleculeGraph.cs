@@ -1,7 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Molecularity.Core.Domain.Exceptions;
 
 namespace Molecularity.Core.Domain {
     public class MoleculeGraph {
@@ -10,17 +10,17 @@ namespace Molecularity.Core.Domain {
 
         public void AddMolecule(Molecule molecule) {
             if (!_molecules.TryAdd(molecule.Id, molecule)) {
-                throw new Exception($"Molecule with id {molecule.Id} already exists.");
+                throw new DuplicateMoleculeException(molecule.Id);
             }
         }
 
         public void AddConnection(int fromMoleculeId, int toMoleculeId) {
             if (!_molecules.ContainsKey(fromMoleculeId)) {
-                throw new Exception($"Molecule with id {fromMoleculeId} not found.");
+                throw new MoleculeNotFoundException(fromMoleculeId);
             }
 
             if (!_molecules.ContainsKey(toMoleculeId)) {
-                throw new Exception($"Molecule with id {toMoleculeId} not found.");
+                throw new MoleculeNotFoundException(toMoleculeId);
             }
 
             if (!_connections.ContainsKey(fromMoleculeId)) {
@@ -49,7 +49,7 @@ namespace Molecularity.Core.Domain {
         public Molecule GetMolecule(int moleculeId) {
             return _molecules.TryGetValue(moleculeId, out Molecule? molecule)
                 ? molecule
-                : throw new Exception($"Molecule with id {moleculeId} not found.");
+                : throw new MoleculeNotFoundException(moleculeId);
         }
 
         public bool TryGetMolecule(int moleculeId, out Molecule? molecule) {
@@ -75,11 +75,11 @@ namespace Molecularity.Core.Domain {
 
         public void RemoveMolecule(int moleculeId) {
             if (!_molecules.TryGetValue(moleculeId, out Molecule? molecule)) {
-                throw new Exception($"Molecule with id {moleculeId} not found.");
+                throw new MoleculeNotFoundException(moleculeId);
             }
 
             if (!molecule.IsAlive) {
-                throw new Exception($"Molecule with id {moleculeId} is already removed.");
+                throw new MoleculeAlreadyRemovedException(moleculeId);
             }
 
             molecule.Remove();
@@ -125,7 +125,7 @@ namespace Molecularity.Core.Domain {
                     molecule.SetFromSnapshot(moleculeSnapshot);
                 }
                 else {
-                    throw new Exception($"Molecule with id {moleculeSnapshot.Id} not found.");
+                    throw new MoleculeNotFoundException(moleculeSnapshot.Id);
                 }
             }
 

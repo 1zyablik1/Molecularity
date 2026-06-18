@@ -1,5 +1,7 @@
+using System.Collections.Generic;
+
 namespace Molecularity.Core.Domain.Abilities {
     public interface IAbility {
-        void Execute(Molecule source, MoleculeGraph graph);
+        IReadOnlyList<TurnEvent> Execute(Molecule source, MoleculeGraph graph);
     }
 }
