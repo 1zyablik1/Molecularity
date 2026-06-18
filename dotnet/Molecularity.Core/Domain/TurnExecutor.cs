@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Molecularity.Core.Domain {
     public class TurnExecutor {
-        private const int DeltaPerTurn = -1;
+        private const int DeltaPerTurn = GameBalance.BaseDecrement;
 
         private readonly MoleculeGraph _graph;
 

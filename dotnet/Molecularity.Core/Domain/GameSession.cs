@@ -15,12 +15,10 @@ namespace Molecularity.Core.Domain {
         private GraphSnapshot? _previousSnapshot;
         private bool _lastActionWasUndo;
 
-        private bool _isUndoUnlocked;
-
-        public bool CanUndo => _isUndoUnlocked
-                               && _previousSnapshot != null
+        public bool CanUndo => _previousSnapshot != null
                                && !_lastActionWasUndo
-                               && Status == GameStatus.InProgress;
+                               && Status == GameStatus.InProgress
+                               && _inventory.Count(LevelItemType.Undo) > 0;
 
         public GameSession(LevelConfig levelConfig, PlayerInventory inventory) {
             _inventory = inventory;
@@ -52,16 +50,6 @@ namespace Molecularity.Core.Domain {
             return result;
         }
 
-        public void Undo() {
-            if (!CanUndo) {
-                throw new InvalidOperationException("Undo not available.");
-            }
-
-            Graph.RestoreSnapshot(_previousSnapshot!);
-            _previousSnapshot = null;
-            _lastActionWasUndo = true;
-        }
-
         public void UseInstantItem(LevelItemType type) {
             ILevelItem? iLevelItem = _inventory.GetItem(type);
             if (iLevelItem == null) {
@@ -72,10 +60,17 @@ namespace Molecularity.Core.Domain {
                 throw new InvalidOperationException($"Item of type {type} is not an instant item.");
             }
 
-            // Corner case for undo item
+            // Undo is a special instant item: it does not act on the graph via Use(),
+            // it consumes the snapshot taken before the last turn and reverts it immediately.
             if (type == LevelItemType.Undo) {
+                if (!CanUndo) {
+                    throw new InvalidOperationException("Undo not available.");
+                }
+
                 _inventory.Remove(item);
-                _isUndoUnlocked = true;
+                Graph.RestoreSnapshot(_previousSnapshot!);
+                _previousSnapshot = null;
+                _lastActionWasUndo = true;
                 return;
             }
 

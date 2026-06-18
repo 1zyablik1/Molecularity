@@ -19,14 +19,15 @@ namespace Molecularity.Core.Domain {
             MoleculeType.Simple => new NoAbility(),
             MoleculeType.Shield => new NoAbility(),
             MoleculeType.Parasite => new NoAbility(),
+            MoleculeType.Anchor => new HealNeighborsAbility(),
             _ => throw new ArgumentOutOfRangeException()
         };
 
         private static IEnumerable<IPassiveProperty> CreatePassives(MoleculeType type) => type switch {
             MoleculeType.Simple => Array.Empty<IPassiveProperty>(),
-            //TODO: configure
-            MoleculeType.Shield => new[] { new ShieldPassive(2) },
-            MoleculeType.Parasite => Array.Empty<IPassiveProperty>(),
+            MoleculeType.Shield => new IPassiveProperty[] { new ShieldPassive(GameBalance.ShieldTurns) },
+            MoleculeType.Parasite => new IPassiveProperty[] { new NeighborCountDecrementPassive() },
+            MoleculeType.Anchor => new IPassiveProperty[] { new FlatDecrementPassive(GameBalance.AnchorDecrement) },
             _ => throw new ArgumentOutOfRangeException()
         };
     }
