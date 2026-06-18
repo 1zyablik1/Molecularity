@@ -1,0 +1,17 @@
+{
+  "levelId": 5,
+  "layoutSeed": 5,
+  "molecules": [
+    { "id": 1, "type": "Parasite", "initialValue": 6, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
+    { "id": 3, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
+    { "id": 4, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false },
+    { "id": 5, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false }
+  ],
+  "connections": [
+    { "fromId": 1, "toId": 2 },
+    { "fromId": 1, "toId": 3 },
+    { "fromId": 2, "toId": 4 },
+    { "fromId": 3, "toId": 5 }
+  ]
+}
