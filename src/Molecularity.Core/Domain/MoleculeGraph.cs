@@ -100,6 +100,20 @@ namespace Molecularity.Core.Domain {
             return _molecules.Values.All(m => !m.IsAlive);
         }
 
+        /// <summary>
+        /// Returns the next free molecule id: max id across ALL molecules (including removed
+        /// ones whose entries stay in _molecules) plus 1. Returns 1 if the graph is empty.
+        /// Considers removed molecules so spawned children never collide with removed ids.
+        /// </summary>
+        public int NextId() {
+            if (_molecules.Count == 0) return 1;
+            int max = 0;
+            foreach (int id in _molecules.Keys) {
+                if (id > max) max = id;
+            }
+            return max + 1;
+        }
+
         public GraphSnapshot TakeSnapshot() {
             var moleculeSnapshot = new List<MoleculeSnapshot>();
             foreach (Molecule molecule in _molecules.Values) {
@@ -120,6 +134,26 @@ namespace Molecularity.Core.Domain {
         }
 
         public void RestoreSnapshot(GraphSnapshot snapshot) {
+            // Build a set of ids present in the snapshot.
+            var snapshotIds = new HashSet<int>();
+            foreach (MoleculeSnapshot moleculeSnapshot in snapshot.Molecules) {
+                snapshotIds.Add(moleculeSnapshot.Id);
+            }
+
+            // Remove any molecules that were spawned AFTER the snapshot was taken
+            // (e.g. Splitter children). Their ids won't be in snapshotIds.
+            var idsToRemove = new List<int>();
+            foreach (int id in _molecules.Keys) {
+                if (!snapshotIds.Contains(id)) {
+                    idsToRemove.Add(id);
+                }
+            }
+            foreach (int id in idsToRemove) {
+                _molecules.Remove(id);
+                _connections.Remove(id);
+            }
+
+            // Restore state of all molecules present in the snapshot.
             foreach (MoleculeSnapshot moleculeSnapshot in snapshot.Molecules) {
                 if (_molecules.TryGetValue(moleculeSnapshot.Id, out Molecule? molecule)) {
                     molecule.SetFromSnapshot(moleculeSnapshot);

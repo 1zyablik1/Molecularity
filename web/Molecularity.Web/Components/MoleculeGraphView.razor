@@ -80,13 +80,14 @@
     private static string F(double v) => v.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string TypeLabel(string type) => type switch {
-        "Simple"  => "ПРОСТАЯ",
+        "Simple"   => "ПРОСТАЯ",
         "Parasite" => "ПАРАЗИТ",
-        "Lazy"    => "ЛЕНИВАЯ",
-        "Shield"  => "ЩИТ",
-        "Lock"    => "ЗАМОК",
-        "Anchor"  => "ЯКОРЬ",
-        "Bomb"    => "💥БОМБА",
-        _         => type.ToUpperInvariant()
+        "Lazy"     => "ЛЕНИВАЯ",
+        "Shield"   => "ЩИТ",
+        "Lock"     => "ЗАМОК",
+        "Anchor"   => "ЯКОРЬ",
+        "Bomb"     => "💥БОМБА",
+        "Splitter" => "✂СПЛИТ",
+        _          => type.ToUpperInvariant()
     };
 }

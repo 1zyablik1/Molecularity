@@ -102,7 +102,7 @@ dotnet/
   список пассивок `IPassiveProperty`. Создаётся только через `MoleculeFactory`.
 - **`MoleculeGraph`** — молекулы + двусторонние связи (adjacency). Умеет
   `TakeSnapshot()` / `RestoreSnapshot()` (для undo).
-- **`MoleculeType`** — `Simple`, `Lazy`, `Shield`, `Lock`, `Anchor`, `Parasite`, `Bomb`.
+- **`MoleculeType`** — `Simple`, `Lazy`, `Shield`, `Lock`, `Anchor`, `Parasite`, `Bomb`, `Splitter`.
 - **`GameSession`** — оркестрирует один уровень: граф, статус, инвентарь, undo, статистика.
 - **`GameStatus`** — `InProgress`, `Win`, `Lose`, `Stuck`.
 - **`SessionStats`** (`session.Stats`) — статистика для меты (звёзды/ачивки):
@@ -145,13 +145,14 @@ dotnet/
 событий хода. Это **контракт для Unity-рендерера**: каждое событие соответствует ровно
 одному изменению состояния графа.
 
-Три типа событий:
+Четыре типа событий:
 
 | Тип | Поля | Описание |
 |-----|------|----------|
 | `ValueChangedEvent` | `MoleculeId`, `Delta`, `NewValue`, `IsRevealed`, `Reason` | Значение молекулы изменилось. `Reason` = `Ability` (абилка) или `Decrement` (ход-декремент). |
 | `MoleculeRemovedEvent` | `MoleculeId` | Молекула удалена с поля. |
 | `MoleculeRevealedEvent` | `MoleculeId` | Молекула перешла из скрытой в раскрытую (туман снят). |
+| `MoleculeSpawnedEvent` | `MoleculeId`, `Type`, `Value` | Молекула появилась на поле в результате абилки (например, Splitter спаунит детей). |
 
 **Гарантированный порядок** событий в списке:
 1. `ValueChangedEvent(Reason=Ability)` — для каждой молекулы, затронутой абилкой кликнутой молекулы.
@@ -196,6 +197,7 @@ dotnet/
 | **Parasite** | **−(число живых соседей)** | нет | `NeighborCountDecrementPassive` | убирать соседей первыми |
 | **Anchor** | **−2** | **+1 всем живым соседям** | `FlatDecrementPassive` | рискованный «донор» |
 | **Bomb** | −1 | **удаляет всех живых соседей (взрыв игнорирует защиту Shield/Lock; каскада нет)** | нет | одноразовый кластерный снос |
+| **Splitter** | −1 | **до удаления: спаунит 2 новых Simple(2), каждый соединён со всеми живыми соседями сплиттера; дети НЕ соединены друг с другом** | нет | разветвитель — обменивает один узел на два |
 
 Попытка кликнуть молекулу с активным `PreventsRemoval` (Shield или Lock) **отклоняется** — бросается `MoleculeShieldedException`; ход **не** расходуется. Защитный счётчик тикает вниз на каждом ходу от других кликов; по истечении N ходов молекула становится обычной (`IsRemovable = true`).
 
@@ -278,6 +280,7 @@ dotnet/
 - Перед каждым ходом `GameSession` делает `TakeSnapshot()` графа.
 - Предмет `Undo` **сразу** восстанавливает снапшот (один клик = откат).
 - Откатывается **только последний** ход. Чтобы откатить ещё — нужен ещё один предмет Undo.
+- `RestoreSnapshot` восстанавливает не только состояние присутствующих в снапшоте молекул, но и **удаляет из `_molecules` и `_connections` любую молекулу, id которой отсутствует в снапшоте** (т.е. спауненных после снапшота детей Splitter). После восстановления граф полностью совпадает со снапшотом.
 
 ---
 
@@ -302,7 +305,7 @@ dotnet/
 - Граф, добавление/удаление молекул, раскрытие соседей при удалении.
 - Цикл хода `TurnExecutor`: абилка → удаление → (базовый −1 через `ModifyDelta`) →
   тик пассивок → win/lose в `GameSession`.
-- Все 7 типов MVP: **Simple (−1), Lazy (ускоряющийся декремент −1,−2,−3…, кликабельна), Shield (заморожен + блок клика), Lock (блок клика, декремент идёт), Parasite (−число соседей), Anchor (+1 соседям на клик, −2 за ход), Bomb (удаляет всех живых соседей при клике, игнорируя защиту; −1 за ход)**. `MoleculeFactory` маппит все типы.
+- Все 8 типов MVP: **Simple (−1), Lazy (ускоряющийся декремент −1,−2,−3…, кликабельна), Shield (заморожен + блок клика), Lock (блок клика, декремент идёт), Parasite (−число соседей), Anchor (+1 соседям на клик, −2 за ход), Bomb (удаляет всех живых соседей при клике, игнорируя защиту; −1 за ход), Splitter (спаунит 2 Simple(2) с унаследованными связями до своего удаления; −1 за ход)**. `MoleculeFactory` маппит все типы.
 - Пассивки: `LazyPassive`, `ShieldPassive`, `LockPassive`, `FreezePassive`, `NoPassive`, `NeighborCountDecrementPassive`
   (паразит), `FlatDecrementPassive` (якорь). Абилка `HealNeighborsAbility` (якорь).
 - `IPassiveProperty` расширен свойством `PreventsRemoval`; `Molecule.IsRemovable` агрегирует его по всем пассивкам.
@@ -310,7 +313,7 @@ dotnet/
 - `MoleculeShieldedException` добавлена в иерархию `MolecularityException`.
 - Константы баланса вынесены в `GameBalance` (Anchor/Shield/Freeze/base decrement); переопределяются per-level через `BalanceConfig` (JSON-блок `balance`).
 - Инвентарь + 5 предметов (RevealAll, PlusOneAll, Freeze, ChainBreak, Undo).
-- Снапшоты графа (`TakeSnapshot` / `RestoreSnapshot`).
+- Снапшоты графа (`TakeSnapshot` / `RestoreSnapshot`). `RestoreSnapshot` теперь также удаляет из графа молекулы, не присутствующие в снапшоте (например, детей Splitter), обеспечивая корректный undo после спауна.
 - **Undo мгновенный** — `UseInstantItem(Undo)` сразу откатывает последний ход и тратит
   предмет; `CanUndo` учитывает наличие предмета в инвентаре.
 - **Предметы и undo подключены к консольному циклу** (выбор действия: клик / предмет /
@@ -324,9 +327,9 @@ dotnet/
 - **Опциональный `LayoutSeed`** в `LevelConfig` — хранит seed для Unity-раскладки;
   Core читает, но не использует; `null` если не указан в JSON.
 - **Гранулярные события `TurnResult.Events`**: `TurnResult` содержит
-  `IReadOnlyList<TurnEvent>` с тремя типами событий (`ValueChangedEvent`,
-  `MoleculeRemovedEvent`, `MoleculeRevealedEvent`) и `ValueChangeReason` (`Ability` /
-  `Decrement`). Порядок событий хронологически гарантирован (ability → removed → revealed
+  `IReadOnlyList<TurnEvent>` с четырьмя типами событий (`ValueChangedEvent`,
+  `MoleculeRemovedEvent`, `MoleculeRevealedEvent`, `MoleculeSpawnedEvent`) и `ValueChangeReason` (`Ability` /
+  `Decrement`). Порядок событий хронологически гарантирован (ability/spawn → removed → revealed
   → decrement) — это контракт для Unity-рендерера.
 - **Доменные исключения**: иерархия `MolecularityException` →
   `MoleculeNotFoundException`, `DuplicateMoleculeException`,
@@ -347,7 +350,7 @@ dotnet/
   `InteractionCornerTests` (7 сценариев — предмет×тип и баланс: Freeze гасит паразита,
   ChainBreak уменьшает декремент паразита и рвёт раскрытие, override base-декремента,
   PlusOneAll×2 = ревайв, Anchor без соседей без ability-событий, undo недоступен после победы).
-- **Всего 101 тест.**
+- **Всего 176 тестов.** (добавлены `SplitterTests.cs` — 6 тестов: базовый спаун, значение детей после хода, события, undo, изолированный сплиттер, сценарий солвера).
 
 ### ⏳ Ещё не сделано / требует доработки
 - **Глобальный файл баланса** — единый `balance.json` для всех уровней сразу (сейчас только per-level через `balance`-блок в каждом JSON).

@@ -9,6 +9,7 @@ namespace Molecularity.Core.Data {
         Parasite,
         Shield,
         Lock,
-        Bomb
+        Bomb,
+        Splitter
     }
 }

@@ -25,6 +25,7 @@ namespace Molecularity.Core.Domain {
             MoleculeType.Parasite => new NoAbility(),
             MoleculeType.Anchor => new HealNeighborsAbility(balance.AnchorHeal),
             MoleculeType.Bomb => new BombAbility(),
+            MoleculeType.Splitter => new SplitAbility(),
             _ => throw new UnknownMoleculeTypeException(type)
         };
 
@@ -36,6 +37,7 @@ namespace Molecularity.Core.Domain {
             MoleculeType.Parasite => new IPassiveProperty[] { new NeighborCountDecrementPassive() },
             MoleculeType.Anchor => new IPassiveProperty[] { new FlatDecrementPassive(balance.AnchorDecrement) },
             MoleculeType.Bomb => Array.Empty<IPassiveProperty>(),
+            MoleculeType.Splitter => Array.Empty<IPassiveProperty>(),
             _ => throw new UnknownMoleculeTypeException(type)
         };
     }
