@@ -2,6 +2,7 @@ namespace Molecularity.Core.Domain.Passives {
     public class FreezePassive : IPassiveProperty {
         public bool IsExpired { get; private set; }
         public bool PreventsRemoval => false;
+        public bool PausesOwner => TurnsLeft > 0;
         public int TurnsLeft { get; private set; }
 
         public FreezePassive(int turns) {

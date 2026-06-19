@@ -12,6 +12,7 @@ namespace Molecularity.Core.Domain.Passives {
 
         public bool IsExpired => false;
         public bool PreventsRemoval => false;
+        public bool PausesOwner => false;
 
         public int ModifyDelta(int delta, Molecule owner, MoleculeGraph graph) {
             return _delta;

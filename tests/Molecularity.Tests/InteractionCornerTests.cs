@@ -142,4 +142,32 @@ public class InteractionCornerTests {
         Assert.False(session.CanUndo);
         Assert.Throws<InvalidOperationException>(() => session.UseInstantItem(LevelItemType.Undo));
     }
+
+    // ── Freeze fully pauses the target — including the Lazy progression ──────
+    [Fact]
+    public void Freeze_OnLazy_PausesValueAndProgression_ThenResumesFromSamePosition() {
+        // FreezeTurns default = 3. While frozen, the Lazy molecule must neither lose value
+        // nor advance its accelerating progression — so when it thaws it resumes at -1.
+        var inventory = TestData.InventoryWith(new FreezeItem());
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> {
+                TestData.Lazy(1, 20),
+                TestData.Simple(2, 9),
+                TestData.Simple(3, 9),
+                TestData.Simple(4, 9),
+                TestData.Simple(5, 9),
+            },
+            new List<ConnectionConfig> { new(1, 2), new(1, 3), new(1, 4), new(1, 5) },
+            inventory);
+
+        session.UseSingleTargetItem(LevelItemType.Freeze, 1);
+
+        session.TakeTurn(2); // frozen turn 1
+        session.TakeTurn(3); // frozen turn 2
+        session.TakeTurn(4); // frozen turn 3 (freeze expires this tick)
+        Assert.Equal(20, session.Graph.GetMolecule(1).Value); // value untouched while frozen
+
+        session.TakeTurn(5); // thawed: progression resumes at the FIRST step, -1
+        Assert.Equal(19, session.Graph.GetMolecule(1).Value); // not 16 (= -4 if it had kept aging)
+    }
 }

@@ -3,6 +3,7 @@ namespace Molecularity.Core.Domain.Passives {
         private int _turnsLeft;
         public bool IsExpired { get; private set; }
         public bool PreventsRemoval => _turnsLeft > 0;
+        public bool PausesOwner => false;
 
         public LockPassive(int turnsLeft) {
             _turnsLeft = turnsLeft;

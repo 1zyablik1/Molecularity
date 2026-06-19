@@ -99,4 +99,33 @@ public class UndoTests {
         Assert.Equal(1, session.Graph.GetMolecule(1).Value);
         Assert.DoesNotContain(redo.Events.OfType<ValueChangedEvent>(), c => c.MoleculeId == 1 && c.Delta != 0);
     }
+
+    [Fact]
+    public void Undo_RestoresLazyProgressionPosition() {
+        // Lazy decays -1, -2, -3, …  Undo must restore not just the value but the
+        // progression position, so the re-done turn applies the SAME step as before.
+        var inventory = new PlayerInventory();
+        inventory.Add(new UndoItem());
+
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> {
+                TestData.Lazy(1, 20),
+                TestData.Simple(2, 9),
+                TestData.Simple(3, 9),
+                TestData.Simple(4, 9),
+            },
+            new List<ConnectionConfig> { new(1, 2), new(1, 3), new(1, 4) },
+            inventory);
+
+        session.TakeTurn(2);                              // Lazy: -1 → 19 (next step would be -2)
+        Assert.Equal(19, session.Graph.GetMolecule(1).Value);
+        session.TakeTurn(3);                              // Lazy: -2 → 17
+        Assert.Equal(17, session.Graph.GetMolecule(1).Value);
+
+        session.UseInstantItem(LevelItemType.Undo);       // back to after turn 1 (value 19, step→-2)
+        Assert.Equal(19, session.Graph.GetMolecule(1).Value);
+
+        session.TakeTurn(3);                              // re-done: must be -2 again → 17 (not -3 → 16)
+        Assert.Equal(17, session.Graph.GetMolecule(1).Value);
+    }
 }

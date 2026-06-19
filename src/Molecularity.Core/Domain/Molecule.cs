@@ -56,7 +56,14 @@ namespace Molecularity.Core.Domain {
         }
 
         public void TickPassives(MoleculeGraph graph) {
-            foreach (IPassiveProperty? passive in _passives) {
+            // While paused (e.g. by Freeze), only the pausing passive(s) tick down — every
+            // other passive (e.g. the Lazy progression) is suspended until the pause expires.
+            bool paused = _passives.Any(p => p.PausesOwner);
+            foreach (IPassiveProperty passive in _passives) {
+                if (paused && !passive.PausesOwner) {
+                    continue;
+                }
+
                 passive.OnPassiveApply(this, graph);
             }
 

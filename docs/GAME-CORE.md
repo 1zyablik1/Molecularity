@@ -209,11 +209,16 @@ dotnet/
 ## 9. Пассивки (`IPassiveProperty`)
 
 Контракт: `int ModifyDelta(delta, owner, graph)` · `void OnPassiveApply(owner, graph)` ·
-`bool IsExpired` · `bool PreventsRemoval` · `IPassiveProperty Clone()`.
+`bool IsExpired` · `bool PreventsRemoval` · `bool PausesOwner` · `IPassiveProperty Clone()`.
 
 Свойство `PreventsRemoval` возвращает `true`, пока пассивка блокирует удаление молекулы.
 `Molecule.IsRemovable` равен `true` тогда и только тогда, когда ни одна пассивка не имеет
 `PreventsRemoval == true`.
+
+Свойство `PausesOwner` (только у Freeze, пока активна) **полностью паузит потактовую логику
+молекулы**: декремент гасится, а ВСЕ остальные пассивки (например, прогрессия Lazy) **не
+тикают** — `Molecule.TickPassives` продвигает только саму паузящую пассивку, пока она не
+истечёт. После размораживания остальные пассивки продолжают с той же позиции.
 
 - **`NoPassive`** — ничего не делает. `PreventsRemoval = false`.
 - **`LazyPassive(step)`** — `ModifyDelta` возвращает растущий по модулю декремент:
@@ -223,9 +228,10 @@ dotnet/
   **и** `PreventsRemoval = true` (блок удаления). После истечения молекула ведёт себя как Simple.
 - **`LockPassive(turns)`** — `ModifyDelta → delta` (декремент проходит без изменений),
   но `PreventsRemoval = true` пока `_turnsLeft > 0`. После истечения молекула кликабельна и тикает как Simple.
-- **`FreezePassive(turns)`** — `ModifyDelta → 0` на `turns` ходов, потом истекает.
-  `PreventsRemoval = false`. Накладывается предметом Freeze и **действует со следующего хода** (использование
-  предмета само по себе ходом не является).
+- **`FreezePassive(turns)`** — `PausesOwner = true` на `turns` ходов: полностью паузит цель
+  (декремент 0 + остальные пассивки не тикают), потом истекает. `PreventsRemoval = false`
+  (замороженную молекулу можно кликнуть). Накладывается предметом Freeze и **действует со
+  следующего хода** (использование предмета само по себе ходом не является).
 
 **Порядок применения пассивок и их приоритет:**
 Пассивки применяются к дельте в порядке их списка (`_passives`). «Величинные» пассивки
