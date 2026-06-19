@@ -170,4 +170,57 @@ public class InteractionCornerTests {
         session.TakeTurn(5); // thawed: progression resumes at the FIRST step, -1
         Assert.Equal(19, session.Graph.GetMolecule(1).Value); // not 16 (= -4 if it had kept aging)
     }
+
+    // ── Protection blocks the per-turn decrement, NOT external value changes ─
+
+    [Fact]
+    public void AnchorHeal_AppliesToShieldedNeighbor() {
+        // Shield blocks damage (the decrement) but can still be healed: clicking the anchor
+        // adds +1 to the shielded neighbour via a direct ApplyDelta (bypasses ModifyDelta).
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> {
+                TestData.Anchor(1, 5),
+                TestData.Shield(2, 5),
+            },
+            new List<ConnectionConfig> { new(1, 2) });
+
+        session.TakeTurn(1); // heal 2 (+1 -> 6); anchor removed; shield's decrement is frozen (0)
+
+        Assert.Equal(6, session.Graph.GetMolecule(2).Value);
+    }
+
+    [Fact]
+    public void PlusOneAll_AppliesToFrozenMolecule() {
+        // Freeze pauses the molecule's OWN per-turn logic, but an item is an external action:
+        // PlusOneAll still raises a frozen molecule's value.
+        var inventory = TestData.InventoryWith(new FreezeItem(), new PlusOneAllItem());
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> { TestData.Simple(1, 5), TestData.Simple(2, 5) },
+            new List<ConnectionConfig> { new(1, 2) },
+            inventory);
+
+        session.UseSingleTargetItem(LevelItemType.Freeze, 1);
+        session.UseInstantItem(LevelItemType.PlusOneAll);
+
+        Assert.Equal(6, session.Graph.GetMolecule(1).Value); // frozen molecule still gets +1
+    }
+
+    [Fact]
+    public void Anchor_HealsParasite_WhichThenDecrementsByRemainingNeighbours() {
+        // One turn, several effects: clicking the anchor heals the parasite (+1), the anchor is
+        // removed (so the parasite now has one fewer neighbour), then the parasite decrements by
+        // its remaining live-neighbour count.
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> {
+                TestData.Anchor(1, 9),
+                TestData.Parasite(2, 9),
+                TestData.Simple(3, 9),
+            },
+            new List<ConnectionConfig> { new(1, 2), new(2, 3) });
+
+        session.TakeTurn(1); // heal parasite +1 -> 10; anchor gone; parasite now has 1 neighbour -> -1
+
+        Assert.Equal(9, session.Graph.GetMolecule(2).Value); // 10 - 1
+        Assert.Equal(8, session.Graph.GetMolecule(3).Value); // simple -1
+    }
 }
