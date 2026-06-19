@@ -102,7 +102,7 @@ dotnet/
   список пассивок `IPassiveProperty`. Создаётся только через `MoleculeFactory`.
 - **`MoleculeGraph`** — молекулы + двусторонние связи (adjacency). Умеет
   `TakeSnapshot()` / `RestoreSnapshot()` (для undo).
-- **`MoleculeType`** — `Simple`, `Lazy`, `Shield`, `Lock`, `Anchor`, `Parasite`.
+- **`MoleculeType`** — `Simple`, `Lazy`, `Shield`, `Lock`, `Anchor`, `Parasite`, `Bomb`.
 - **`GameSession`** — оркестрирует один уровень: граф, статус, инвентарь, undo, статистика.
 - **`GameStatus`** — `InProgress`, `Win`, `Lose`, `Stuck`.
 - **`SessionStats`** (`session.Stats`) — статистика для меты (звёзды/ачивки):
@@ -195,6 +195,7 @@ dotnet/
 | **Lock** | −1 с первого хода; **нельзя кликнуть** пока активна N ходов | нет | `LockPassive` | опасная помеха — убьёт себя сама |
 | **Parasite** | **−(число живых соседей)** | нет | `NeighborCountDecrementPassive` | убирать соседей первыми |
 | **Anchor** | **−2** | **+1 всем живым соседям** | `FlatDecrementPassive` | рискованный «донор» |
+| **Bomb** | −1 | **удаляет всех живых соседей (взрыв игнорирует защиту Shield/Lock; каскада нет)** | нет | одноразовый кластерный снос |
 
 Попытка кликнуть молекулу с активным `PreventsRemoval` (Shield или Lock) **отклоняется** — бросается `MoleculeShieldedException`; ход **не** расходуется. Защитный счётчик тикает вниз на каждом ходу от других кликов; по истечении N ходов молекула становится обычной (`IsRemovable = true`).
 
@@ -301,7 +302,7 @@ dotnet/
 - Граф, добавление/удаление молекул, раскрытие соседей при удалении.
 - Цикл хода `TurnExecutor`: абилка → удаление → (базовый −1 через `ModifyDelta`) →
   тик пассивок → win/lose в `GameSession`.
-- Все 6 типов MVP: **Simple (−1), Lazy (ускоряющийся декремент −1,−2,−3…, кликабельна), Shield (заморожен + блок клика), Lock (блок клика, декремент идёт), Parasite (−число соседей), Anchor (+1 соседям на клик, −2 за ход)**. `MoleculeFactory` маппит все типы.
+- Все 7 типов MVP: **Simple (−1), Lazy (ускоряющийся декремент −1,−2,−3…, кликабельна), Shield (заморожен + блок клика), Lock (блок клика, декремент идёт), Parasite (−число соседей), Anchor (+1 соседям на клик, −2 за ход), Bomb (удаляет всех живых соседей при клике, игнорируя защиту; −1 за ход)**. `MoleculeFactory` маппит все типы.
 - Пассивки: `LazyPassive`, `ShieldPassive`, `LockPassive`, `FreezePassive`, `NoPassive`, `NeighborCountDecrementPassive`
   (паразит), `FlatDecrementPassive` (якорь). Абилка `HealNeighborsAbility` (якорь).
 - `IPassiveProperty` расширен свойством `PreventsRemoval`; `Molecule.IsRemovable` агрегирует его по всем пассивкам.

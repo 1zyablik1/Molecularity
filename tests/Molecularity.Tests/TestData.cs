@@ -28,6 +28,9 @@ internal static class TestData {
     public static MoleculeConfig Anchor(int id, int value, bool revealed = true) =>
         new(id, MoleculeType.Anchor, value, revealed);
 
+    public static MoleculeConfig Bomb(int id, int value, bool revealed = true) =>
+        new(id, MoleculeType.Bomb, value, revealed);
+
     public static LevelConfig Level(List<MoleculeConfig> molecules, List<ConnectionConfig> connections) =>
         new(LevelId: 1, molecules, connections);
 

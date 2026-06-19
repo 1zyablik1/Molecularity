@@ -8,6 +8,7 @@ namespace Molecularity.Core.Data {
         Anchor,
         Parasite,
         Shield,
-        Lock
+        Lock,
+        Bomb
     }
 }
