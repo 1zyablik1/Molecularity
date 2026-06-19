@@ -53,6 +53,7 @@ ExportedObj/
 !src/**/*.csproj
 !tests/**/*.csproj
 !tools/**/*.csproj
+!web/**/*.csproj
 
 # .NET build output (any project depth)
 [Bb]in/

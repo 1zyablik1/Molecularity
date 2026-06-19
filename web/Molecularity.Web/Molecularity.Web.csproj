@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Molecularity.Web</RootNamespace>
+    <AssemblyName>Molecularity.Web</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Molecularity.Core\Molecularity.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Link levels from content/levels into wwwroot/levels at build/publish time -->
+  <ItemGroup>
+    <Content Include="..\..\content\levels\*.json"
+             Link="wwwroot\levels\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Generate wwwroot/levels-index.json listing level ids at build time.
+       Uses an inline MSBuild task so no external tooling is needed. -->
+  <UsingTask TaskName="GenerateLevelsIndexTask"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <LevelFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputFile ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          var ids = LevelFiles
+              .Select(f => Path.GetFileNameWithoutExtension(f.ItemSpec))
+              .Where(n => n.StartsWith("level_"))
+              .Select(n => n.Substring("level_".Length))
+              .OrderBy(n => {
+                  int v;
+                  return int.TryParse(n, out v) ? v : int.MaxValue;
+              })
+              .ToArray();
+          var json = "[" + string.Join(",", ids) + "]";
+          Directory.CreateDirectory(Path.GetDirectoryName(OutputFile));
+          File.WriteAllText(OutputFile, json);
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="GenerateLevelsIndex" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <_LevelJsonFiles Include="$(MSBuildProjectDirectory)\..\..\content\levels\level_*.json" />
+    </ItemGroup>
+    <GenerateLevelsIndexTask
+      LevelFiles="@(_LevelJsonFiles)"
+      OutputFile="$(MSBuildProjectDirectory)\wwwroot\levels-index.json" />
+  </Target>
+
+</Project>
