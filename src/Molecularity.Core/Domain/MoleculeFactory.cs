@@ -19,7 +19,9 @@ namespace Molecularity.Core.Domain {
 
         private static IAbility CreateAbility(MoleculeType type, BalanceConfig balance) => type switch {
             MoleculeType.Simple => new NoAbility(),
+            MoleculeType.Lazy => new NoAbility(),
             MoleculeType.Shield => new NoAbility(),
+            MoleculeType.Lock => new NoAbility(),
             MoleculeType.Parasite => new NoAbility(),
             MoleculeType.Anchor => new HealNeighborsAbility(balance.AnchorHeal),
             _ => throw new UnknownMoleculeTypeException(type)
@@ -27,7 +29,9 @@ namespace Molecularity.Core.Domain {
 
         private static IEnumerable<IPassiveProperty> CreatePassives(MoleculeType type, BalanceConfig balance) => type switch {
             MoleculeType.Simple => Array.Empty<IPassiveProperty>(),
+            MoleculeType.Lazy => new IPassiveProperty[] { new LazyPassive(balance.LazyStep) },
             MoleculeType.Shield => new IPassiveProperty[] { new ShieldPassive(balance.ShieldTurns) },
+            MoleculeType.Lock => new IPassiveProperty[] { new LockPassive(balance.LockTurns) },
             MoleculeType.Parasite => new IPassiveProperty[] { new NeighborCountDecrementPassive() },
             MoleculeType.Anchor => new IPassiveProperty[] { new FlatDecrementPassive(balance.AnchorDecrement) },
             _ => throw new UnknownMoleculeTypeException(type)

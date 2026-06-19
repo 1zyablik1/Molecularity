@@ -20,19 +20,24 @@
                 if (!_positions.TryGetValue(mol.Id, out var p)) continue;
                 bool selected = SelectedTargets.Contains(mol.Id);
                 bool culprit  = CulpritId == mol.Id;
-                string nodeClass = $"node {mol.Type.ToLowerInvariant()} {(selected ? "selected" : "")} {(culprit ? "culprit" : "")}";
-                string ariaLabel = $"{mol.Type}, {(mol.IsRevealed ? mol.Value.ToString() : "значение скрыто")}";
+                bool shielded = !mol.IsRemovable;
+                string nodeClass = $"node {mol.Type.ToLowerInvariant()} {(selected ? "selected" : "")} {(culprit ? "culprit" : "")} {(shielded ? "shielded" : "")}";
+                string ariaLabel = $"{mol.Type}, {(mol.IsRevealed ? mol.Value.ToString() : "значение скрыто")}{(shielded ? ", защищена" : "")}";
                 <g class="@nodeClass"
-                   tabindex="0"
+                   tabindex="@(shielded ? -1 : 0)"
                    role="button"
                    aria-label="@ariaLabel"
+                   aria-disabled="@(shielded ? "true" : "false")"
                    transform="translate(@F(p.X) @F(p.Y))"
-                   @onclick="() => OnMoleculeClick.InvokeAsync(mol.Id)"
-                   @onkeydown="(e) => HandleKeyDown(e, mol.Id)">
+                   @onclick="() => { if (!mol.IsRemovable) return; OnMoleculeClick.InvokeAsync(mol.Id); }"
+                   @onkeydown="(e) => HandleKeyDown(e, mol.Id, mol.IsRemovable)">
                     <circle class="halo" r="61" />
                     <circle class="core" r="47" />
                     <text class="value" y="7">@(mol.IsRevealed ? mol.Value.ToString() : "??")</text>
                     <text class="type" y="72">@TypeLabel(mol.Type)</text>
+                    @if (shielded) {
+                        <g class="shield-badge" transform="translate(0,-42)"><text>🔒</text></g>
+                    }
                 </g>
             }
         </g>
@@ -65,7 +70,8 @@
         _positions  = GraphLayout.Compute(nodeIds, edges);
     }
 
-    private void HandleKeyDown(KeyboardEventArgs e, int id) {
+    private void HandleKeyDown(KeyboardEventArgs e, int id, bool isRemovable = true) {
+        if (!isRemovable) return;
         if (e.Key == "Enter" || e.Key == " ") {
             OnMoleculeClick.InvokeAsync(id);
         }
@@ -76,7 +82,9 @@
     private static string TypeLabel(string type) => type switch {
         "Simple"  => "ПРОСТАЯ",
         "Parasite" => "ПАРАЗИТ",
+        "Lazy"    => "ЛЕНИВАЯ",
         "Shield"  => "ЩИТ",
+        "Lock"    => "ЗАМОК",
         "Anchor"  => "ЯКОРЬ",
         _         => type.ToUpperInvariant()
     };

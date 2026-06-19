@@ -33,7 +33,9 @@ public class BalanceConfigTests : IDisposable {
     [Fact]
     public void Default_HasExpectedValues() {
         Assert.Equal(-1, BalanceConfig.Default.BaseDecrement);
+        Assert.Equal(1, BalanceConfig.Default.LazyStep);
         Assert.Equal(2, BalanceConfig.Default.ShieldTurns);
+        Assert.Equal(2, BalanceConfig.Default.LockTurns);
         Assert.Equal(3, BalanceConfig.Default.FreezeTurns);
         Assert.Equal(-2, BalanceConfig.Default.AnchorDecrement);
         Assert.Equal(1, BalanceConfig.Default.AnchorHeal);
@@ -86,38 +88,34 @@ public class BalanceConfigTests : IDisposable {
         Assert.Null(level.Balance);
     }
 
-    // ── Behavioral: custom ShieldTurns = 3 ──────────────────────────────────
+    // ── Behavioral: custom LazyStep = 2 (decrements 2, 4, 6, …) ─────────────
 
     [Fact]
-    public void Shield_WithShieldTurns3_SurvivesThreeDecrementsAndTakesDamageOnFourth() {
-        // Star: shield (id 1, value 1) with 4 simple neighbours to click one per turn.
-        var balance = new BalanceConfig(ShieldTurns: 3);
+    public void Lazy_WithStep2_DecrementsByTwoFourSix() {
+        // Star: lazy (id 1) with 3 simple neighbours; click one per turn and watch the
+        // lazy molecule's accelerating decay with a common difference of 2.
+        var balance = new BalanceConfig(LazyStep: 2);
         var levelConfig = new LevelConfig(
             LevelId: 99,
             Molecules: new List<MoleculeConfig> {
-                TestData.Shield(1, 1),
+                TestData.Lazy(1, 20),
                 TestData.Simple(2, 10),
                 TestData.Simple(3, 10),
                 TestData.Simple(4, 10),
-                TestData.Simple(5, 10),
             },
-            Connections: new List<ConnectionConfig> { new(1, 2), new(1, 3), new(1, 4), new(1, 5) },
+            Connections: new List<ConnectionConfig> { new(1, 2), new(1, 3), new(1, 4) },
             Balance: balance);
 
         var session = new GameSession(levelConfig, new Molecularity.Core.Player.PlayerInventory());
 
         session.TakeTurn(2);
-        Assert.Equal(1, session.Graph.GetMolecule(1).Value); // turn 1: shielded
+        Assert.Equal(18, session.Graph.GetMolecule(1).Value); // turn 1: -2
 
         session.TakeTurn(3);
-        Assert.Equal(1, session.Graph.GetMolecule(1).Value); // turn 2: shielded
+        Assert.Equal(14, session.Graph.GetMolecule(1).Value); // turn 2: -4
 
         session.TakeTurn(4);
-        Assert.Equal(1, session.Graph.GetMolecule(1).Value); // turn 3: shielded (extra turn vs default)
-
-        TurnResult result = session.TakeTurn(5);
-        Assert.Equal(GameStatus.Lose, session.Status); // turn 4: shield gone, 1 -> 0
-        Assert.Equal(1, result.CulpritId);
+        Assert.Equal(8, session.Graph.GetMolecule(1).Value);  // turn 3: -6
     }
 
     // ── Behavioral: custom AnchorDecrement = -3 ─────────────────────────────

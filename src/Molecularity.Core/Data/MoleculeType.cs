@@ -4,8 +4,10 @@ namespace Molecularity.Core.Data {
     /// </summary>
     public enum MoleculeType {
         Simple,
-        Shield,
+        Lazy,
         Anchor,
-        Parasite
+        Parasite,
+        Shield,
+        Lock
     }
 }

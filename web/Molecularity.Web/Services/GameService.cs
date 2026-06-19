@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
+using Molecularity.Core.Domain.Exceptions;
 using Molecularity.Core.Items;
 using Molecularity.Core.Items.Implementations;
 using Molecularity.Core.Player;
@@ -12,7 +13,7 @@ namespace Molecularity.Web.Services {
     /// <summary>
     /// View-model representation of an alive molecule with its graph position info.
     /// </summary>
-    public sealed record MoleculeViewModel(int Id, string Type, int Value, bool IsRevealed);
+    public sealed record MoleculeViewModel(int Id, string Type, int Value, bool IsRevealed, bool IsRemovable);
 
     /// <summary>
     /// View-model representation of a connection between two alive molecules.
@@ -70,7 +71,12 @@ namespace Molecularity.Web.Services {
                 throw new InvalidOperationException("Эта молекула уже удалена.");
             }
 
-            TurnResult result = _session.TakeTurn(moleculeId);
+            TurnResult result;
+            try {
+                result = _session.TakeTurn(moleculeId);
+            } catch (MoleculeShieldedException) {
+                return BuildResult($"Молекула {moleculeId} защищена и не может быть удалена сейчас.", null);
+            }
 
             string message = _session.Status switch {
                 GameStatus.Win  => "Уровень пройден",
@@ -118,7 +124,7 @@ namespace Molecularity.Web.Services {
                 .Where(m => m.IsAlive)
                 .Select(m => {
                     Molecule source = _session.Graph.GetMolecule(m.Id);
-                    return new MoleculeViewModel(m.Id, source.Type.ToString(), m.Value, m.IsRevealed);
+                    return new MoleculeViewModel(m.Id, source.Type.ToString(), m.Value, m.IsRevealed, source.IsRemovable);
                 })
                 .ToList();
 

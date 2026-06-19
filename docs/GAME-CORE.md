@@ -81,11 +81,13 @@ dotnet/
 ```
 
 - `levelId` — уникальный числовой идентификатор уровня.
-- `type` — строка `"Simple"` / `"Parasite"` / `"Shield"` / `"Anchor"` (case-insensitive).
+- `type` — строка `"Simple"` / `"Lazy"` / `"Shield"` / `"Lock"` / `"Parasite"` / `"Anchor"` (case-insensitive).
 - `layoutSeed` — **опциональное** целое число. Используется только **Unity** для воспроизводимого автоматического расположения узлов на экране. Core читает поле и хранит его в `LevelConfig`, но никак не использует в логике. Если поле отсутствует — `null`; Unity тогда вычисляет seed из `LevelId`.
 - `balance` — **опциональный** объект переопределения баланса для данного уровня. Если поле отсутствует — `LevelConfig.Balance` равен `null`, и все значения берутся из `BalanceConfig.Default` (= `GameBalance`). Если объект присутствует — можно переопределить любое подмножество полей; пропущенные поля также наследуют значения из `GameBalance`. Поля объекта:
   - `baseDecrement` (int, default: −1) — базовый декремент за ход.
-  - `shieldTurns` (int, default: 2) — число ходов, на которые щит блокирует декремент.
+  - `lazyStep` (int, default: 1) — общая разность арифметической прогрессии декремента Lazy (−1, −2, −3, …).
+  - `shieldTurns` (int, default: 2) — число ходов защиты Shield (блок декремента + блок удаления).
+  - `lockTurns` (int, default: 2) — число ходов защиты Lock (декремент проходит, но удаление заблокировано).
   - `freezeTurns` (int, default: 3) — число ходов заморозки от предмета Freeze.
   - `anchorDecrement` (int, default: −2) — декремент Anchor за ход.
   - `anchorHeal` (int, default: 1) — лечение соседей от абилки Anchor.
@@ -100,7 +102,7 @@ dotnet/
   список пассивок `IPassiveProperty`. Создаётся только через `MoleculeFactory`.
 - **`MoleculeGraph`** — молекулы + двусторонние связи (adjacency). Умеет
   `TakeSnapshot()` / `RestoreSnapshot()` (для undo).
-- **`MoleculeType`** — `Simple`, `Shield`, `Anchor`, `Parasite`.
+- **`MoleculeType`** — `Simple`, `Lazy`, `Shield`, `Lock`, `Anchor`, `Parasite`.
 - **`GameSession`** — оркестрирует один уровень: граф, статус, инвентарь, undo, статистика.
 - **`GameStatus`** — `InProgress`, `Win`, `Lose`.
 - **`SessionStats`** (`session.Stats`) — статистика для меты (звёзды/ачивки):
@@ -179,16 +181,25 @@ dotnet/
 
 Тип = фиксированный набор (абилка + пассивки + правило декремента). Гибридов нет.
 
+Типы различаются поведением декремента и возможностью удаления (`Lock`/`Shield`
+нельзя кликнуть, пока активны):
+
 | Тип | Декремент за ход | On-click абилка | Пассивка | Назначение |
 |-----|------------------|-----------------|----------|------------|
 | **Simple** | −1 | нет | нет | базовый тип |
-| **Parasite** | **−(число живых соседей)** | нет | пассивка, меняющая дельту | убирать соседей первыми |
-| **Shield** | первые `SHIELD_TURNS` ходов 0, потом −1 | нет | `ShieldPassive` | выиграть время |
-| **Anchor** | **−2** | **+1 всем живым соседям** | нет | рискованный «донор» |
+| **Lazy** | **арифметическая прогрессия −1, −2, −3, …** (шаг `LAZY_STEP`); кликабельна всегда | нет | `LazyPassive` | ускоряющийся распад — убирать раньше, чем разгонится |
+| **Shield** | первые `SHIELD_TURNS` ходов 0, потом −1; **нельзя кликнуть** пока активна | нет | `ShieldPassive` | защита с блоком удаления |
+| **Lock** | −1 с первого хода; **нельзя кликнуть** пока активна N ходов | нет | `LockPassive` | опасная помеха — убьёт себя сама |
+| **Parasite** | **−(число живых соседей)** | нет | `NeighborCountDecrementPassive` | убирать соседей первыми |
+| **Anchor** | **−2** | **+1 всем живым соседям** | `FlatDecrementPassive` | рискованный «донор» |
+
+Попытка кликнуть молекулу с активным `PreventsRemoval` (Shield или Lock) **отклоняется** — бросается `MoleculeShieldedException`; ход **не** расходуется. Защитный счётчик тикает вниз на каждом ходу от других кликов; по истечении N ходов молекула становится обычной (`IsRemovable = true`).
 
 **Константы (дефолты в `GameBalance`, переопределяются per-level через `BalanceConfig` в JSON-блоке `balance`):**
 - `ANCHOR_DECREMENT = -2`
+- `LAZY_STEP = 1` (общая разность прогрессии Lazy: −1, −2, −3, …)
 - `SHIELD_TURNS = 2`
+- `LOCK_TURNS = 2`
 - `FREEZE_TURNS = 3` (длительность заморозки от предмета)
 
 > Virus и Teleport из ранних версий GDD **в скоуп не входят**.
@@ -198,13 +209,22 @@ dotnet/
 ## 9. Пассивки (`IPassiveProperty`)
 
 Контракт: `int ModifyDelta(delta, owner, graph)` · `void OnPassiveApply(owner, graph)` ·
-`bool IsExpired` · `IPassiveProperty Clone()`.
+`bool IsExpired` · `bool PreventsRemoval` · `IPassiveProperty Clone()`.
 
-- **`NoPassive`** — ничего не делает.
-- **`ShieldPassive(turns)`** — пока `ShieldLeft > 0`, `ModifyDelta → 0` (гасит **весь**
-  ход-декремент, включая будущий паразитный −N), затем истекает.
+Свойство `PreventsRemoval` возвращает `true`, пока пассивка блокирует удаление молекулы.
+`Molecule.IsRemovable` равен `true` тогда и только тогда, когда ни одна пассивка не имеет
+`PreventsRemoval == true`.
+
+- **`NoPassive`** — ничего не делает. `PreventsRemoval = false`.
+- **`LazyPassive(step)`** — `ModifyDelta` возвращает растущий по модулю декремент:
+  −step, −2·step, −3·step, … (шаг `step`, по умолчанию 1 → −1, −2, −3). Никогда не истекает,
+  `PreventsRemoval = false` — молекулу всегда можно кликнуть. `Clone` сохраняет позицию прогрессии.
+- **`ShieldPassive(turns)`** — пока `_turnsLeft > 0`, `ModifyDelta → 0` (гасит декремент)
+  **и** `PreventsRemoval = true` (блок удаления). После истечения молекула ведёт себя как Simple.
+- **`LockPassive(turns)`** — `ModifyDelta → delta` (декремент проходит без изменений),
+  но `PreventsRemoval = true` пока `_turnsLeft > 0`. После истечения молекула кликабельна и тикает как Simple.
 - **`FreezePassive(turns)`** — `ModifyDelta → 0` на `turns` ходов, потом истекает.
-  Накладывается предметом Freeze и **действует со следующего хода** (использование
+  `PreventsRemoval = false`. Накладывается предметом Freeze и **действует со следующего хода** (использование
   предмета само по себе ходом не является).
 
 **Порядок применения пассивок и их приоритет:**
@@ -272,10 +292,12 @@ dotnet/
 - Граф, добавление/удаление молекул, раскрытие соседей при удалении.
 - Цикл хода `TurnExecutor`: абилка → удаление → (базовый −1 через `ModifyDelta`) →
   тик пассивок → win/lose в `GameSession`.
-- Все 4 типа MVP: **Simple, Parasite (−число соседей), Shield (2 хода), Anchor (+1
-  соседям на клик, −2 за ход)**. `MoleculeFactory` маппит все типы.
-- Пассивки: `ShieldPassive`, `FreezePassive`, `NoPassive`, `NeighborCountDecrementPassive`
+- Все 6 типов MVP: **Simple (−1), Lazy (ускоряющийся декремент −1,−2,−3…, кликабельна), Shield (заморожен + блок клика), Lock (блок клика, декремент идёт), Parasite (−число соседей), Anchor (+1 соседям на клик, −2 за ход)**. `MoleculeFactory` маппит все типы.
+- Пассивки: `LazyPassive`, `ShieldPassive`, `LockPassive`, `FreezePassive`, `NoPassive`, `NeighborCountDecrementPassive`
   (паразит), `FlatDecrementPassive` (якорь). Абилка `HealNeighborsAbility` (якорь).
+- `IPassiveProperty` расширен свойством `PreventsRemoval`; `Molecule.IsRemovable` агрегирует его по всем пассивкам.
+- `GameSession.TakeTurn` отклоняет клик по молекуле с `IsRemovable == false` — бросает `MoleculeShieldedException` без расхода хода.
+- `MoleculeShieldedException` добавлена в иерархию `MolecularityException`.
 - Константы баланса вынесены в `GameBalance` (Anchor/Shield/Freeze/base decrement); переопределяются per-level через `BalanceConfig` (JSON-блок `balance`).
 - Инвентарь + 5 предметов (RevealAll, PlusOneAll, Freeze, ChainBreak, Undo).
 - Снапшоты графа (`TakeSnapshot` / `RestoreSnapshot`).

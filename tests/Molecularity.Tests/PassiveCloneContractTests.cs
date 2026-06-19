@@ -9,7 +9,9 @@ namespace Molecularity.Tests;
 public class PassiveCloneContractTests {
     private static readonly Dictionary<Type, Func<IPassiveProperty>> KnownPassives = new() {
         { typeof(NoPassive), () => new NoPassive() },
+        { typeof(LazyPassive), () => new LazyPassive(2) },
         { typeof(ShieldPassive), () => new ShieldPassive(2) },
+        { typeof(LockPassive), () => new LockPassive(2) },
         { typeof(FreezePassive), () => new FreezePassive(3) },
         { typeof(NeighborCountDecrementPassive), () => new NeighborCountDecrementPassive() },
         { typeof(FlatDecrementPassive), () => new FlatDecrementPassive(-2) },

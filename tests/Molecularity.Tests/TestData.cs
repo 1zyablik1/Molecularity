@@ -13,8 +13,14 @@ internal static class TestData {
     public static MoleculeConfig Simple(int id, int value, bool revealed = true) =>
         new(id, MoleculeType.Simple, value, revealed);
 
+    public static MoleculeConfig Lazy(int id, int value, bool revealed = true) =>
+        new(id, MoleculeType.Lazy, value, revealed);
+
     public static MoleculeConfig Shield(int id, int value, bool revealed = true) =>
         new(id, MoleculeType.Shield, value, revealed);
+
+    public static MoleculeConfig Lock(int id, int value, bool revealed = true) =>
+        new(id, MoleculeType.Lock, value, revealed);
 
     public static MoleculeConfig Parasite(int id, int value, bool revealed = true) =>
         new(id, MoleculeType.Parasite, value, revealed);

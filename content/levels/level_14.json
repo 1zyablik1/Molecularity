@@ -3,7 +3,7 @@
   "layoutSeed": 14,
   "molecules": [
     { "id": 1, "type": "Anchor", "initialValue": 5, "isInitiallyRevealed": true },
-    { "id": 2, "type": "Shield", "initialValue": 3, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Lazy", "initialValue": 3, "isInitiallyRevealed": true },
     { "id": 3, "type": "Parasite", "initialValue": 6, "isInitiallyRevealed": true },
     { "id": 4, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": true },
     { "id": 5, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": true },

@@ -51,8 +51,14 @@ namespace Molecularity.Core.Data {
                 if (Balance.FreezeTurns < 1) {
                     errors.Add("Balance.FreezeTurns must be >= 1.");
                 }
+                if (Balance.LazyStep < 1) {
+                    errors.Add("Balance.LazyStep must be >= 1.");
+                }
                 if (Balance.ShieldTurns < 0) {
                     errors.Add("Balance.ShieldTurns must be >= 0.");
+                }
+                if (Balance.LockTurns < 0) {
+                    errors.Add("Balance.LockTurns must be >= 0.");
                 }
             }
 

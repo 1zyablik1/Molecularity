@@ -13,6 +13,7 @@ namespace Molecularity.Core.Domain {
         public int Value { get; private set; }
         public bool IsAlive { get; private set; } = true;
         public bool IsRevealed { get; private set; }
+        public bool IsRemovable => _passives.All(p => !p.PreventsRemoval);
 
         private IAbility Ability { get; }
 

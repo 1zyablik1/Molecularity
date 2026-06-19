@@ -1,5 +1,6 @@
 using System;
 using Molecularity.Core.Data;
+using Molecularity.Core.Domain.Exceptions;
 using Molecularity.Core.Items;
 using Molecularity.Core.Player;
 
@@ -36,6 +37,11 @@ namespace Molecularity.Core.Domain {
         public TurnResult TakeTurn(int moleculeId) {
             if (Status != GameStatus.InProgress) {
                 throw new InvalidOperationException("Game is already over.");
+            }
+
+            Molecule target = Graph.GetMolecule(moleculeId);
+            if (target.IsAlive && !target.IsRemovable) {
+                throw new MoleculeShieldedException(moleculeId);
             }
 
             _previousSnapshot = Graph.TakeSnapshot();

@@ -1,15 +1,15 @@
 namespace Molecularity.Core.Domain.Passives {
-    public class ShieldPassive : IPassiveProperty {
+    public class LockPassive : IPassiveProperty {
         private int _turnsLeft;
         public bool IsExpired { get; private set; }
         public bool PreventsRemoval => _turnsLeft > 0;
 
-        public ShieldPassive(int turnsLeft) {
+        public LockPassive(int turnsLeft) {
             _turnsLeft = turnsLeft;
         }
 
         public int ModifyDelta(int delta, Molecule owner, MoleculeGraph graph) {
-            return _turnsLeft > 0 ? 0 : delta;
+            return delta;
         }
 
         public void OnPassiveApply(Molecule owner, MoleculeGraph graph) {
@@ -22,7 +22,7 @@ namespace Molecularity.Core.Domain.Passives {
         }
 
         public IPassiveProperty Clone() {
-            return new ShieldPassive(_turnsLeft);
+            return new LockPassive(_turnsLeft);
         }
     }
 }

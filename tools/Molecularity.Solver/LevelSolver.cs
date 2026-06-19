@@ -1,3 +1,4 @@
+using System.Linq;
 using Molecularity.Core.Data;
 using Molecularity.Core.Domain;
 
@@ -19,8 +20,8 @@ public class LevelSolver {
         BalanceConfig balance = level.Balance ?? BalanceConfig.Default;
         var executor = new TurnExecutor(graph, balance.BaseDecrement);
 
-        List<int> rootIds = graph.GetAliveAll().Select(m => m.Id).ToList();
-        int moleculeCount = rootIds.Count;
+        List<int> rootIds = graph.GetAliveAll().Where(m => m.IsRemovable).Select(m => m.Id).ToList();
+        int moleculeCount = graph.GetAliveAll().Count();
         int firstMoveCount = rootIds.Count;
 
         long totalWinning = 0;
@@ -90,7 +91,7 @@ public class LevelSolver {
     // Can the level be won clicking ONLY molecules whose value is currently visible
     // (initially revealed, or revealed by an earlier removal)? Early-exits on the first win.
     private bool VisibleOnlyWin(MoleculeGraph graph, TurnExecutor executor) {
-        foreach (Molecule molecule in graph.GetAliveAll().Where(m => m.IsRevealed).ToList()) {
+        foreach (Molecule molecule in graph.GetAliveAll().Where(m => m.IsRevealed && m.IsRemovable).ToList()) {
             if (_fairNodesRemaining-- <= 0) {
                 return false;
             }
@@ -129,7 +130,7 @@ public class LevelSolver {
     private long CountWinningLines(MoleculeGraph graph, TurnExecutor executor) {
         if (_truncated) return 0;
 
-        List<int> ids = graph.GetAliveAll().Select(m => m.Id).ToList();
+        List<int> ids = graph.GetAliveAll().Where(m => m.IsRemovable).Select(m => m.Id).ToList();
         long total = 0;
 
         foreach (int id in ids) {

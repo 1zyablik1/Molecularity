@@ -2,7 +2,7 @@
   "levelId": 10,
   "layoutSeed": 10,
   "molecules": [
-    { "id": 1, "type": "Shield", "initialValue": 3, "isInitiallyRevealed": true },
+    { "id": 1, "type": "Lazy", "initialValue": 3, "isInitiallyRevealed": true },
     { "id": 2, "type": "Parasite", "initialValue": 5, "isInitiallyRevealed": true },
     { "id": 3, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false },
     { "id": 4, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false },

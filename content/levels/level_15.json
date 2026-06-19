@@ -5,7 +5,7 @@
     { "id": 1, "type": "Simple", "initialValue": 7, "isInitiallyRevealed": true },
     { "id": 2, "type": "Parasite", "initialValue": 8, "isInitiallyRevealed": true },
     { "id": 3, "type": "Anchor", "initialValue": 6, "isInitiallyRevealed": true },
-    { "id": 4, "type": "Shield", "initialValue": 4, "isInitiallyRevealed": true },
+    { "id": 4, "type": "Lazy", "initialValue": 4, "isInitiallyRevealed": true },
     { "id": 5, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": false },
     { "id": 6, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": false },
     { "id": 7, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
