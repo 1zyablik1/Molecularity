@@ -1,0 +1,23 @@
+name: Level Solver
+
+# Content-quality gate: runs the solver over content/levels and fails if any level
+# is unsolvable or unfair (winnable only via a blind click / RevealAll).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  solve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Solve all levels
+        run: dotnet run --project tools/Molecularity.Solver -c Release

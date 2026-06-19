@@ -32,6 +32,10 @@ namespace Molecularity.Core.Domain {
 
             BalanceConfig balance = levelConfig.Balance ?? BalanceConfig.Default;
             _turnExecutor = new TurnExecutor(Graph, balance.BaseDecrement);
+
+            if (GameRules.IsStuck(Graph)) {
+                Status = GameStatus.Stuck;
+            }
         }
 
         public TurnResult TakeTurn(int moleculeId) {
@@ -57,6 +61,9 @@ namespace Molecularity.Core.Domain {
 
             if (GameRules.IsWin(Graph)) {
                 Status = GameStatus.Win;
+            }
+            else if (GameRules.IsStuck(Graph)) {
+                Status = GameStatus.Stuck;
             }
 
             return result;

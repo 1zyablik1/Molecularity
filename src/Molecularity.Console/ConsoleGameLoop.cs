@@ -59,6 +59,9 @@ public class ConsoleGameLoop {
                     _renderer.RenderDefeat(_lastCulpritId);
                     _renderer.RenderMessage($"Stats: turns={session.Stats.TurnsTaken}, items used={session.Stats.ItemsUsed}");
                     break;
+                case GameStatus.Stuck:
+                    _renderer.RenderMessage("Тупик: не осталось ходов (все молекулы защищены). Перезапустите уровень.");
+                    break;
             }
         }
     }

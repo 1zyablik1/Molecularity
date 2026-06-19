@@ -79,9 +79,10 @@ namespace Molecularity.Web.Services {
             }
 
             string message = _session.Status switch {
-                GameStatus.Win  => "Уровень пройден",
-                GameStatus.Lose => "Молекула распалась. Попробуйте ещё раз",
-                _               => $"Молекула {moleculeId} удалена"
+                GameStatus.Win   => "Уровень пройден",
+                GameStatus.Lose  => "Молекула распалась. Попробуйте ещё раз",
+                GameStatus.Stuck => "Тупик: ходов не осталось. Перезапустите уровень",
+                _                => $"Молекула {moleculeId} удалена"
             };
 
             return BuildResult(message, result.CulpritId);

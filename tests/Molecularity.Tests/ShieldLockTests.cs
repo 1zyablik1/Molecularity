@@ -13,8 +13,9 @@ public class ShieldLockTests {
         GameSession session = TestData.Session(
             new List<MoleculeConfig> {
                 TestData.Shield(1, 5),
+                TestData.Simple(2, 5), // keeps the session playable (not Stuck)
             },
-            new List<ConnectionConfig>());
+            new List<ConnectionConfig> { new(1, 2) });
 
         Assert.Throws<MoleculeShieldedException>(() => session.TakeTurn(1));
     }
@@ -99,8 +100,9 @@ public class ShieldLockTests {
         GameSession session = TestData.Session(
             new List<MoleculeConfig> {
                 TestData.Lock(1, 5),
+                TestData.Simple(2, 5), // keeps the session playable (not Stuck)
             },
-            new List<ConnectionConfig>());
+            new List<ConnectionConfig> { new(1, 2) });
 
         Assert.Throws<MoleculeShieldedException>(() => session.TakeTurn(1));
     }
@@ -194,5 +196,38 @@ public class ShieldLockTests {
             new List<ConnectionConfig>());
 
         Assert.False(session.Graph.GetMolecule(1).IsRemovable);
+    }
+
+    // ── Stuck: alive molecules remain but none can be clicked ────────────────
+
+    [Fact]
+    public void Stuck_WhenOnlyProtectedMoleculeRemains() {
+        // Shield (2 turns) + Simple. Clicking the Simple leaves only the still-active Shield,
+        // which can't be clicked and can't tick further (nothing left to click) -> Stuck.
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> { TestData.Shield(1, 5), TestData.Simple(2, 5) },
+            new List<ConnectionConfig> { new(1, 2) });
+
+        session.TakeTurn(2);
+
+        Assert.Equal(GameStatus.Stuck, session.Status);
+    }
+
+    [Fact]
+    public void Stuck_DetectedAtConstruction_WhenAllProtected() {
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> { TestData.Shield(1, 5) },
+            new List<ConnectionConfig>());
+
+        Assert.Equal(GameStatus.Stuck, session.Status);
+    }
+
+    [Fact]
+    public void TakeTurn_WhenStuck_Throws() {
+        GameSession session = TestData.Session(
+            new List<MoleculeConfig> { TestData.Shield(1, 5) },
+            new List<ConnectionConfig>());
+
+        Assert.Throws<System.InvalidOperationException>(() => session.TakeTurn(1));
     }
 }

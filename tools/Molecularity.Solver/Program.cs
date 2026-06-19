@@ -9,9 +9,18 @@ var solver = new LevelSolver();
 Console.WriteLine($"{"Level",-8} {"N",3}  {"Solvable",8}  {"WinLines",10}  {"SafeFirst",10}  {"Density",8}  {"Fair",5}  Difficulty");
 Console.WriteLine(new string('-', 82));
 
+var failures = new List<string>();
+
 foreach (int id in repo.GetAll()) {
     LevelConfig level = repo.Get(id);
     SolveReport report = solver.Analyze(level);
+
+    if (!report.Solvable) {
+        failures.Add($"level_{id}: unsolvable");
+    }
+    else if (!report.VisibleOnlySolvable) {
+        failures.Add($"level_{id}: unfair (needs a blind click / RevealAll)");
+    }
 
     string solvable = report.Solvable ? "✓" : "✗";
     string winLines = report.WinningLinesCapped
@@ -26,6 +35,19 @@ foreach (int id in repo.GetAll()) {
 
     Console.WriteLine($"level_{id,-3} {report.MoleculeCount,3}  {solvable,8}  {winLines,10}  {safeFirst,10}  {density,8}  {fair,5}  {difficulty}{blind}{truncated}");
 }
+
+if (failures.Count > 0) {
+    Console.WriteLine();
+    Console.WriteLine($"FAILED — {failures.Count} level(s) are not shippable:");
+    foreach (string failure in failures) {
+        Console.WriteLine($"  - {failure}");
+    }
+
+    Environment.Exit(1);
+}
+
+Console.WriteLine();
+Console.WriteLine("OK — every level is solvable and fair.");
 
 static string ResolvelevelsDirectory(string[] args) {
     if (args.Length > 0) {
