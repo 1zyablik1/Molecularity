@@ -186,4 +186,49 @@ public class SolverTests {
 
         Assert.Equal(0.0, report.SolutionDensity, precision: 9);
     }
+
+    // ── Fog-of-war fairness (VisibleOnlySolvable) ────────────────────────
+
+    [Fact]
+    public void HiddenDanger_IsSolvableButNotVisibleOnlySolvable() {
+        // Diamond: 1 (revealed) — 2,3 (hidden) — 4 (hidden, the urgent value-2 node).
+        // Winnable with full info (click 4 early), but clicking only visible molecules loses,
+        // because 4 is hidden until a neighbour is removed and dies by then.
+        SolveReport report = Analyze(
+            new List<MoleculeConfig> {
+                TestData.Simple(1, 4, revealed: true),
+                TestData.Simple(2, 4, revealed: false),
+                TestData.Simple(3, 4, revealed: false),
+                TestData.Simple(4, 2, revealed: false),
+            },
+            new List<ConnectionConfig> { new(1, 2), new(1, 3), new(2, 4), new(3, 4) });
+
+        Assert.True(report.Solvable);
+        Assert.False(report.VisibleOnlySolvable);
+    }
+
+    [Fact]
+    public void RevealingTheDanger_MakesItVisibleOnlySolvable() {
+        // Same level but molecule 4 is revealed → the player can see and click it first.
+        SolveReport report = Analyze(
+            new List<MoleculeConfig> {
+                TestData.Simple(1, 4, revealed: true),
+                TestData.Simple(2, 4, revealed: false),
+                TestData.Simple(3, 4, revealed: false),
+                TestData.Simple(4, 2, revealed: true),
+            },
+            new List<ConnectionConfig> { new(1, 2), new(1, 3), new(2, 4), new(3, 4) });
+
+        Assert.True(report.Solvable);
+        Assert.True(report.VisibleOnlySolvable);
+    }
+
+    [Fact]
+    public void Unsolvable_IsNotVisibleOnlySolvable() {
+        SolveReport report = Analyze(
+            new List<MoleculeConfig> { TestData.Simple(1, 1), TestData.Simple(2, 1) },
+            new List<ConnectionConfig> { new(1, 2) });
+
+        Assert.False(report.VisibleOnlySolvable);
+    }
 }

@@ -6,8 +6,8 @@ string levelsDir = ResolvelevelsDirectory(args);
 var repo = new JsonLevelRepository(levelsDir);
 var solver = new LevelSolver();
 
-Console.WriteLine($"{"Level",-8} {"N",3}  {"Solvable",8}  {"WinLines",10}  {"SafeFirst",10}  {"Density",8}  Difficulty");
-Console.WriteLine(new string('-', 74));
+Console.WriteLine($"{"Level",-8} {"N",3}  {"Solvable",8}  {"WinLines",10}  {"SafeFirst",10}  {"Density",8}  {"Fair",5}  Difficulty");
+Console.WriteLine(new string('-', 82));
 
 foreach (int id in repo.GetAll()) {
     LevelConfig level = repo.Get(id);
@@ -19,10 +19,12 @@ foreach (int id in repo.GetAll()) {
         : report.WinningLines.ToString();
     string safeFirst = $"{report.SafeFirstMoves}/{report.FirstMoveCount}";
     string density = double.IsNaN(report.SolutionDensity) ? "—" : report.SolutionDensity.ToString("P1");
+    string fair = !report.Solvable ? "—" : report.VisibleOnlySolvable ? "✓" : "✗";
     string difficulty = GetDifficultyLabel(report);
+    string blind = report.Solvable && !report.VisibleOnlySolvable ? " [needs blind click/RevealAll]" : "";
     string truncated = report.Truncated ? " [truncated]" : "";
 
-    Console.WriteLine($"level_{id,-3} {report.MoleculeCount,3}  {solvable,8}  {winLines,10}  {safeFirst,10}  {density,8}  {difficulty}{truncated}");
+    Console.WriteLine($"level_{id,-3} {report.MoleculeCount,3}  {solvable,8}  {winLines,10}  {safeFirst,10}  {density,8}  {fair,5}  {difficulty}{blind}{truncated}");
 }
 
 static string ResolvelevelsDirectory(string[] args) {

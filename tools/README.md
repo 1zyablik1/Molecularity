@@ -16,6 +16,7 @@ to determine solvability and estimate difficulty.
 | WinLines | Number of distinct winning orderings (capped at 100 000; shown with `+` if capped) |
 | SafeFirst | How many of the N opening clicks still lead to a win |
 | Density | **Winning orderings / N!** — solution density, size-normalized (0–100%). Shown as `—` when the exact count is unavailable (capped or truncated) |
+| Fair | Fog-of-war fairness: `✓` if the level can be won clicking **only currently-visible** molecules; `✗` if it is solvable only with a blind click on a hidden molecule (or a `RevealAll` item). Such levels print `[needs blind click/RevealAll]` — usually a problem for early/free levels |
 | Difficulty | Heuristic label derived from Density (see below) |
 
 **Difficulty labels (size-aware, from Density):**

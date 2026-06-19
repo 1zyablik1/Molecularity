@@ -9,6 +9,7 @@ public class LevelSolver {
 
     private long _nodesRemaining;
     private bool _truncated;
+    private long _fairNodesRemaining;
 
     public SolveReport Analyze(LevelConfig level) {
         _nodesRemaining = NodeBudget;
@@ -65,6 +66,8 @@ public class LevelSolver {
             density = totalWinning / Factorial(moleculeCount);
         }
 
+        bool visibleOnlySolvable = totalWinning > 0 && HasVisibleOnlyWin(level, balance);
+
         return new SolveReport(
             Solvable: totalWinning > 0,
             WinningLines: totalWinning,
@@ -73,7 +76,44 @@ public class LevelSolver {
             FirstMoveCount: firstMoveCount,
             MoleculeCount: moleculeCount,
             Truncated: _truncated,
-            SolutionDensity: density);
+            SolutionDensity: density,
+            VisibleOnlySolvable: visibleOnlySolvable);
+    }
+
+    private bool HasVisibleOnlyWin(LevelConfig level, BalanceConfig balance) {
+        MoleculeGraph graph = LevelBuilder.Build(level);
+        var executor = new TurnExecutor(graph, balance.BaseDecrement);
+        _fairNodesRemaining = NodeBudget;
+        return VisibleOnlyWin(graph, executor);
+    }
+
+    // Can the level be won clicking ONLY molecules whose value is currently visible
+    // (initially revealed, or revealed by an earlier removal)? Early-exits on the first win.
+    private bool VisibleOnlyWin(MoleculeGraph graph, TurnExecutor executor) {
+        foreach (Molecule molecule in graph.GetAliveAll().Where(m => m.IsRevealed).ToList()) {
+            if (_fairNodesRemaining-- <= 0) {
+                return false;
+            }
+
+            GraphSnapshot snap = graph.TakeSnapshot();
+            executor.Execute(molecule.Id);
+
+            bool win;
+            if (GameRules.IsLose(graph).IsLoss) {
+                win = false;
+            } else if (graph.IsEmpty()) {
+                win = true;
+            } else {
+                win = VisibleOnlyWin(graph, executor);
+            }
+
+            graph.RestoreSnapshot(snap);
+            if (win) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // N! as a double (exact for the N we care about; avoids overflow for larger N).

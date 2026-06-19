@@ -5,8 +5,8 @@
     { "id": 1, "type": "Parasite", "initialValue": 6, "isInitiallyRevealed": true },
     { "id": 2, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
     { "id": 3, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
-    { "id": 4, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false },
-    { "id": 5, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false }
+    { "id": 4, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": true },
+    { "id": 5, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": true }
   ],
   "connections": [
     { "fromId": 1, "toId": 2 },

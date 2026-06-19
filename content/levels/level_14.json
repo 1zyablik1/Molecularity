@@ -5,10 +5,10 @@
     { "id": 1, "type": "Anchor", "initialValue": 5, "isInitiallyRevealed": true },
     { "id": 2, "type": "Shield", "initialValue": 3, "isInitiallyRevealed": true },
     { "id": 3, "type": "Parasite", "initialValue": 6, "isInitiallyRevealed": true },
-    { "id": 4, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
-    { "id": 5, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": false },
-    { "id": 6, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": false },
-    { "id": 7, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": false }
+    { "id": 4, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": true },
+    { "id": 5, "type": "Simple", "initialValue": 5, "isInitiallyRevealed": true },
+    { "id": 6, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": true },
+    { "id": 7, "type": "Simple", "initialValue": 4, "isInitiallyRevealed": true }
   ],
   "connections": [
     { "fromId": 1, "toId": 3 },
