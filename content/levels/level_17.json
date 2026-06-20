@@ -1,0 +1,13 @@
+{
+  "levelId": 17,
+  "layoutSeed": 17,
+  "molecules": [
+    { "id": 1, "type": "Splitter", "initialValue": 4, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Bomb", "initialValue": 6, "isInitiallyRevealed": true },
+    { "id": 3, "type": "Simple", "initialValue": 7, "isInitiallyRevealed": true }
+  ],
+  "connections": [
+    { "fromId": 1, "toId": 2 },
+    { "fromId": 1, "toId": 3 }
+  ]
+}

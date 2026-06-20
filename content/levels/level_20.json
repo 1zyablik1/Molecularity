@@ -1,0 +1,15 @@
+{
+  "levelId": 20,
+  "layoutSeed": 20,
+  "molecules": [
+    { "id": 1, "type": "Virus", "initialValue": 4, "isInitiallyRevealed": true },
+    { "id": 2, "type": "Anchor", "initialValue": 5, "isInitiallyRevealed": true },
+    { "id": 3, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": true },
+    { "id": 4, "type": "Simple", "initialValue": 6, "isInitiallyRevealed": true }
+  ],
+  "connections": [
+    { "fromId": 1, "toId": 2 },
+    { "fromId": 2, "toId": 3 },
+    { "fromId": 2, "toId": 4 }
+  ]
+}
