@@ -60,6 +60,9 @@ namespace Molecularity.Core.Data {
                 if (Balance.LockTurns < 0) {
                     errors.Add("Balance.LockTurns must be >= 0.");
                 }
+                if (Balance.VirusBite < 0) {
+                    errors.Add("Balance.VirusBite must be >= 0.");
+                }
             }
 
             return new LevelValidationResult(errors);

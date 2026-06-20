@@ -15,6 +15,7 @@ public class PassiveCloneContractTests {
         { typeof(FreezePassive), () => new FreezePassive(3) },
         { typeof(NeighborCountDecrementPassive), () => new NeighborCountDecrementPassive() },
         { typeof(FlatDecrementPassive), () => new FlatDecrementPassive(-2) },
+        { typeof(VirusPassive), () => new VirusPassive(2) },
     };
 
     [Fact]

@@ -10,6 +10,7 @@ namespace Molecularity.Core.Data {
         Shield,
         Lock,
         Bomb,
-        Splitter
+        Splitter,
+        Virus
     }
 }

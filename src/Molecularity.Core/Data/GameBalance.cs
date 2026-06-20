@@ -11,5 +11,6 @@ namespace Molecularity.Core.Data {
         public const int FreezeTurns = 3;
         public const int AnchorDecrement = -2;
         public const int AnchorHeal = 1;
+        public const int VirusBite = 2;
     }
 }

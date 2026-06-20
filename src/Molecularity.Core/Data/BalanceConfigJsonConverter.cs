@@ -21,6 +21,7 @@ namespace Molecularity.Core.Data {
             int freezeTurns = GameBalance.FreezeTurns;
             int anchorDecrement = GameBalance.AnchorDecrement;
             int anchorHeal = GameBalance.AnchorHeal;
+            int virusBite = GameBalance.VirusBite;
 
             while (reader.Read()) {
                 if (reader.TokenType == JsonTokenType.EndObject) {
@@ -48,12 +49,14 @@ namespace Molecularity.Core.Data {
                     anchorDecrement = reader.GetInt32();
                 } else if (string.Equals(propertyName, "anchorHeal", StringComparison.OrdinalIgnoreCase)) {
                     anchorHeal = reader.GetInt32();
+                } else if (string.Equals(propertyName, "virusBite", StringComparison.OrdinalIgnoreCase)) {
+                    virusBite = reader.GetInt32();
                 } else {
                     reader.Skip();
                 }
             }
 
-            return new BalanceConfig(baseDecrement, lazyStep, shieldTurns, lockTurns, freezeTurns, anchorDecrement, anchorHeal);
+            return new BalanceConfig(baseDecrement, lazyStep, shieldTurns, lockTurns, freezeTurns, anchorDecrement, anchorHeal, virusBite);
         }
 
         public override void Write(Utf8JsonWriter writer, BalanceConfig value, JsonSerializerOptions options) {
@@ -65,6 +68,7 @@ namespace Molecularity.Core.Data {
             writer.WriteNumber("freezeTurns", value.FreezeTurns);
             writer.WriteNumber("anchorDecrement", value.AnchorDecrement);
             writer.WriteNumber("anchorHeal", value.AnchorHeal);
+            writer.WriteNumber("virusBite", value.VirusBite);
             writer.WriteEndObject();
         }
     }

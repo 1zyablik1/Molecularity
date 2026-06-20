@@ -117,7 +117,7 @@ namespace Molecularity.Core.Domain {
         public GraphSnapshot TakeSnapshot() {
             var moleculeSnapshot = new List<MoleculeSnapshot>();
             foreach (Molecule molecule in _molecules.Values) {
-                moleculeSnapshot.Add(new MoleculeSnapshot(molecule.Id, molecule.Value, molecule.IsAlive, molecule.IsRevealed, molecule.ClonePassives()));
+                moleculeSnapshot.Add(molecule.ToSnapshot());
             }
 
             List<MoleculeConnectionSnapshot> connectionSnapshot = new();

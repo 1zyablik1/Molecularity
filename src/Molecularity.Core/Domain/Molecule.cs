@@ -15,7 +15,7 @@ namespace Molecularity.Core.Domain {
         public bool IsRevealed { get; private set; }
         public bool IsRemovable => _passives.All(p => !p.PreventsRemoval);
 
-        private IAbility Ability { get; }
+        private IAbility Ability { get; set; }
 
         private readonly List<IPassiveProperty> _passives = new();
 
@@ -70,11 +70,28 @@ namespace Molecularity.Core.Domain {
             _passives.RemoveAll(p => p.IsExpired);
         }
 
+        /// <summary>
+        /// Mutates this molecule at runtime (e.g. Virus infection).
+        /// Replaces Type, Ability, and the full passive list while preserving Id/Value/IsAlive/IsRevealed.
+        /// </summary>
+        public void MutateTo(MoleculeType type, IAbility ability, IEnumerable<IPassiveProperty> passives) {
+            Type = type;
+            Ability = ability;
+            _passives.Clear();
+            _passives.AddRange(passives);
+        }
+
+        public MoleculeSnapshot ToSnapshot() {
+            return new MoleculeSnapshot(Id, Value, IsAlive, IsRevealed, ClonePassives(), Type, Ability);
+        }
+
         public void SetFromSnapshot(MoleculeSnapshot moleculeSnapshot) {
             Id = moleculeSnapshot.Id;
             Value = moleculeSnapshot.Value;
             IsAlive = moleculeSnapshot.IsAlive;
             IsRevealed = moleculeSnapshot.IsRevealed;
+            Type = moleculeSnapshot.Type;
+            Ability = moleculeSnapshot.Ability;
 
             _passives.Clear();
             _passives.AddRange(moleculeSnapshot.Passives.Select(p => p.Clone()));

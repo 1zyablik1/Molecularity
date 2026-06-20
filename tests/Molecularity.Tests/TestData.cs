@@ -34,6 +34,9 @@ internal static class TestData {
     public static MoleculeConfig Splitter(int id, int value, bool revealed = true) =>
         new(id, MoleculeType.Splitter, value, revealed);
 
+    public static MoleculeConfig Virus(int id, int value, bool revealed = true) =>
+        new(id, MoleculeType.Virus, value, revealed);
+
     public static LevelConfig Level(List<MoleculeConfig> molecules, List<ConnectionConfig> connections) =>
         new(LevelId: 1, molecules, connections);
 
