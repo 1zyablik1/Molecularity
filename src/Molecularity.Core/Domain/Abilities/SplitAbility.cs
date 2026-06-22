@@ -4,14 +4,19 @@ using Molecularity.Core.Data;
 
 namespace Molecularity.Core.Domain.Abilities {
     /// <summary>
-    /// Splitter on-click ability: spawns 2 new Simple child molecules with value 2,
+    /// Splitter on-click ability: spawns 2 new Simple child molecules (value = SplitterChildValue),
     /// each connected to every currently-alive neighbour of the splitter.
     /// The children are NOT connected to each other.
     /// The splitter itself is removed by TurnExecutor after the ability (not here).
     /// </summary>
     public class SplitAbility : IAbility {
-        private const int ChildValue = 2;
         private const int ChildCount = 2;
+
+        private readonly int _childValue;
+
+        public SplitAbility(int childValue) {
+            _childValue = childValue;
+        }
 
         public IReadOnlyList<TurnEvent> Execute(Molecule source, MoleculeGraph graph) {
             // Materialise alive-neighbour ids BEFORE any mutation so the list is stable.
@@ -26,7 +31,7 @@ namespace Molecularity.Core.Domain.Abilities {
                 int childId = graph.NextId();
 
                 Molecule child = MoleculeFactory.Create(
-                    new MoleculeConfig(childId, MoleculeType.Simple, ChildValue, IsInitiallyRevealed: true));
+                    new MoleculeConfig(childId, MoleculeType.Simple, _childValue, IsInitiallyRevealed: true));
 
                 graph.AddMolecule(child);
 
@@ -34,7 +39,7 @@ namespace Molecularity.Core.Domain.Abilities {
                     graph.AddConnection(childId, neighbourId);
                 }
 
-                events.Add(new MoleculeSpawnedEvent(childId, MoleculeType.Simple, ChildValue));
+                events.Add(new MoleculeSpawnedEvent(childId, MoleculeType.Simple, _childValue));
             }
 
             return events;

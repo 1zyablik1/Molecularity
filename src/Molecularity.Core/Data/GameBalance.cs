@@ -12,5 +12,6 @@ namespace Molecularity.Core.Data {
         public const int AnchorDecrement = -2;
         public const int AnchorHeal = 1;
         public const int VirusBite = 2;
+        public const int SplitterChildValue = 3;
     }
 }

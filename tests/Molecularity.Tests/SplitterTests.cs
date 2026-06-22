@@ -58,10 +58,10 @@ public class SplitterTests {
     // ── Children value: spawned at 2, decremented by -1 in the same turn → 1 ──
 
     [Fact]
-    public void Splitter_Children_HaveValueOneAfterSpawnTurnDecrement() {
+    public void Splitter_Children_DecrementOnTheirSpawnTurn() {
         // Splitter (id 1) connected to Simple (id 2, val 9).
         // Children get ids 3 and 4 (NextId after existing 1 and 2).
-        // They spawn at value 2 then the turn decrement applies → value 1.
+        // They spawn at SplitterChildValue (default 3) then the turn decrement applies → 2.
         GameSession session = TestData.Session(
             new List<MoleculeConfig> {
                 TestData.Splitter(1, 5),
@@ -71,14 +71,13 @@ public class SplitterTests {
 
         session.TakeTurn(1);
 
-        // Children at ids 3 and 4
         Molecule child1 = session.Graph.GetMolecule(3);
         Molecule child2 = session.Graph.GetMolecule(4);
         Assert.True(child1.IsAlive);
         Assert.True(child2.IsAlive);
-        // Spawn value = 2; turn decrement = -1; result = 1
-        Assert.Equal(1, child1.Value);
-        Assert.Equal(1, child2.Value);
+        // Spawn value = 3; turn decrement = -1; result = 2
+        Assert.Equal(2, child1.Value);
+        Assert.Equal(2, child2.Value);
     }
 
     // ── Events contain two MoleculeSpawnedEvents ─────────────────────────────
@@ -99,7 +98,7 @@ public class SplitterTests {
         Assert.Equal(2, spawnEvents.Count);
         Assert.All(spawnEvents, e => {
             Assert.Equal(MoleculeType.Simple, e.Type);
-            Assert.Equal(2, e.Value);
+            Assert.Equal(3, e.Value);
         });
     }
 
@@ -192,5 +191,25 @@ public class SplitterTests {
         var report = new Molecularity.Solver.LevelSolver().Analyze(level);
 
         Assert.True(report.Solvable);
+    }
+
+    // ── Child value is balance-configurable ──────────────────────────────────
+
+    [Fact]
+    public void Splitter_ChildValue_FollowsBalanceOverride() {
+        var levelConfig = new LevelConfig(
+            LevelId: 1,
+            Molecules: new List<MoleculeConfig> {
+                TestData.Splitter(1, 5),
+                TestData.Simple(2, 9),
+            },
+            Connections: new List<ConnectionConfig> { new(1, 2) },
+            Balance: new BalanceConfig(SplitterChildValue: 5));
+
+        var session = new GameSession(levelConfig, new PlayerInventory());
+        TurnResult result = session.TakeTurn(1);
+
+        Assert.All(result.Events.OfType<MoleculeSpawnedEvent>(), e => Assert.Equal(5, e.Value));
+        Assert.Equal(4, session.Graph.GetMolecule(3).Value); // spawned 5, decremented to 4
     }
 }

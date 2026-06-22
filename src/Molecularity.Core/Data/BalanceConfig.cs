@@ -10,7 +10,8 @@ namespace Molecularity.Core.Data {
         int FreezeTurns = GameBalance.FreezeTurns,
         int AnchorDecrement = GameBalance.AnchorDecrement,
         int AnchorHeal = GameBalance.AnchorHeal,
-        int VirusBite = GameBalance.VirusBite) {
+        int VirusBite = GameBalance.VirusBite,
+        int SplitterChildValue = GameBalance.SplitterChildValue) {
         public static readonly BalanceConfig Default = new();
     }
 }

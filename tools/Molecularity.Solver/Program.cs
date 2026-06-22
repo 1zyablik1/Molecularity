@@ -27,7 +27,11 @@ foreach (int id in repo.GetAll()) {
         ? $"{report.WinningLines}+"
         : report.WinningLines.ToString();
     string safeFirst = $"{report.SafeFirstMoves}/{report.FirstMoveCount}";
-    string density = double.IsNaN(report.SolutionDensity) ? "—" : report.SolutionDensity.ToString("P1");
+    // Density can exceed 100% on graph-growing levels (Splitter adds molecules, so winning
+    // orderings outnumber N!); show it as "100%+" since the metric saturates there.
+    string density = double.IsNaN(report.SolutionDensity) ? "—"
+        : report.SolutionDensity > 1.0 ? "100%+"
+        : report.SolutionDensity.ToString("P1");
     string fair = !report.Solvable ? "—" : report.VisibleOnlySolvable ? "✓" : "✗";
     string difficulty = GetDifficultyLabel(report);
     string blind = report.Solvable && !report.VisibleOnlySolvable ? " [needs blind click/RevealAll]" : "";

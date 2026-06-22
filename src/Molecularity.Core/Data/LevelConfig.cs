@@ -63,6 +63,9 @@ namespace Molecularity.Core.Data {
                 if (Balance.VirusBite < 0) {
                     errors.Add("Balance.VirusBite must be >= 0.");
                 }
+                if (Balance.SplitterChildValue < 1) {
+                    errors.Add("Balance.SplitterChildValue must be >= 1.");
+                }
             }
 
             return new LevelValidationResult(errors);

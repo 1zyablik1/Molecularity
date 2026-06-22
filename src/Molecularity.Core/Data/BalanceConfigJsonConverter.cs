@@ -22,6 +22,7 @@ namespace Molecularity.Core.Data {
             int anchorDecrement = GameBalance.AnchorDecrement;
             int anchorHeal = GameBalance.AnchorHeal;
             int virusBite = GameBalance.VirusBite;
+            int splitterChildValue = GameBalance.SplitterChildValue;
 
             while (reader.Read()) {
                 if (reader.TokenType == JsonTokenType.EndObject) {
@@ -51,12 +52,14 @@ namespace Molecularity.Core.Data {
                     anchorHeal = reader.GetInt32();
                 } else if (string.Equals(propertyName, "virusBite", StringComparison.OrdinalIgnoreCase)) {
                     virusBite = reader.GetInt32();
+                } else if (string.Equals(propertyName, "splitterChildValue", StringComparison.OrdinalIgnoreCase)) {
+                    splitterChildValue = reader.GetInt32();
                 } else {
                     reader.Skip();
                 }
             }
 
-            return new BalanceConfig(baseDecrement, lazyStep, shieldTurns, lockTurns, freezeTurns, anchorDecrement, anchorHeal, virusBite);
+            return new BalanceConfig(baseDecrement, lazyStep, shieldTurns, lockTurns, freezeTurns, anchorDecrement, anchorHeal, virusBite, splitterChildValue);
         }
 
         public override void Write(Utf8JsonWriter writer, BalanceConfig value, JsonSerializerOptions options) {
@@ -69,6 +72,7 @@ namespace Molecularity.Core.Data {
             writer.WriteNumber("anchorDecrement", value.AnchorDecrement);
             writer.WriteNumber("anchorHeal", value.AnchorHeal);
             writer.WriteNumber("virusBite", value.VirusBite);
+            writer.WriteNumber("splitterChildValue", value.SplitterChildValue);
             writer.WriteEndObject();
         }
     }

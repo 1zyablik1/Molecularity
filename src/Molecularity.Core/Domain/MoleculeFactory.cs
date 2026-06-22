@@ -25,7 +25,7 @@ namespace Molecularity.Core.Domain {
             MoleculeType.Parasite => new NoAbility(),
             MoleculeType.Anchor => new HealNeighborsAbility(balance.AnchorHeal),
             MoleculeType.Bomb => new BombAbility(),
-            MoleculeType.Splitter => new SplitAbility(),
+            MoleculeType.Splitter => new SplitAbility(balance.SplitterChildValue),
             MoleculeType.Virus => new NoAbility(),
             _ => throw new UnknownMoleculeTypeException(type)
         };
